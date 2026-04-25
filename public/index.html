@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#FF6B35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<title>货运记账 - 运输收支</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#333;line-height:1.5;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+:root{--p:#FF6B35;--pl:#FF8F65;--pd:#E55A25;--a:#004E89;--bg:#f0f2f5;--c:#fff;--t:#333;--tl:#888;--b:#e8e8e8;--d:#e53935;--s:#2ECC71}
+.header{background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;padding:18px 16px;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 3px 15px rgba(255,107,53,0.3)}
+.header h1{font-size:22px;font-weight:700;letter-spacing:1px}
+.nav-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;background:#fff;padding:4px 0 6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));box-shadow:0 -3px 15px rgba(0,0,0,0.06);border-radius:16px 16px 0 0}
+.nav-item{flex:1;text-align:center;padding:6px 2px;font-size:10px;color:var(--tl);cursor:pointer;border:none;background:none;border-radius:8px;margin:0 4px}
+.nav-item.active{color:var(--p);background:rgba(255,107,53,0.08);font-weight:600}
+.nav-item .nav-icon{font-size:24px;display:block;margin-bottom:1px}
+.page{display:none;padding:14px;max-width:800px;margin:0 auto}
+.page.active{display:block}
+.card{background:var(--c);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
+.card-title{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--a)}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--tl);margin-bottom:4px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input,textarea{width:100%;padding:11px 14px;border:1.5px solid var(--b);border-radius:10px;font-size:14px;outline:none;font-family:inherit;background:#fafafa}
+input:focus,textarea:focus{border-color:var(--p);background:#fff;box-shadow:0 0 0 3px rgba(255,107,53,0.08)}
+textarea{min-height:60px;resize:vertical}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 24px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;width:100%}
+.btn-p{background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;box-shadow:0 4px 12px rgba(255,107,53,0.25)}
+.btn-d{background:var(--d);color:#fff}
+.btn-o{background:transparent;border:2px solid var(--p);color:var(--p)}
+.btn-sm{padding:8px 14px;font-size:12px;width:auto;border-radius:8px}
+.btn-g{background:linear-gradient(135deg,var(--a),#0066A0);color:#fff}
+.btn-group{display:flex;gap:10px;margin-top:18px}
+.btn-group .btn{flex:1}
+.list-item{display:flex;align-items:center;padding:14px 0;border-bottom:1px solid #f3f3f3;cursor:pointer;gap:12px}
+.list-item:last-child{border-bottom:none}
+.list-item .dot{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.dot-o{background:rgba(255,107,53,0.1);color:var(--p)}
+.list-item .info{flex:1;min-width:0}
+.list-item .name{font-size:15px;font-weight:600}
+.list-item .route{font-size:12px;color:var(--tl);margin-top:3px}
+.list-item .amounts{text-align:right;flex-shrink:0}
+.list-item .fare{font-size:15px;font-weight:700;color:var(--p)}
+.list-item .net{font-size:11px;color:var(--s);margin-top:1px}
+.search-bar{display:flex;gap:8px;margin-bottom:14px}
+.search-bar input{flex:1;background:#fff}
+.empty-state{text-align:center;padding:50px 20px;color:var(--tl)}
+.empty-state .icon{font-size:56px;margin-bottom:14px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-card{background:var(--c);border-radius:14px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.stat-card .sv{font-size:26px;font-weight:800;color:var(--p)}
+.stat-card .sl{font-size:11px;color:var(--tl);margin-top:4px}
+.date-filter{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.date-filter .btn{flex:0;width:auto;padding:8px 16px;font-size:12px;border-radius:20px;background:#f5f5f5;color:var(--tl)}
+.date-filter .btn.active{background:var(--p);color:#fff}
+.date-filter input[type=date]{flex:1;min-width:110px;background:#fff}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:200;justify-content:center;align-items:flex-end;padding:0}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:500px;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease}
+@keyframes slideUp{0%{transform:translateY(100%)}100%{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 16px}
+.modal h2{font-size:18px;margin-bottom:14px;color:var(--a)}
+.modal-close{float:right;background:none;border:none;font-size:22px;color:var(--tl);padding:0}
+.detail-row{display:flex;padding:10px 0;border-bottom:1px solid #f5f5f5;align-items:flex-start}
+.detail-row:last-child{border-bottom:none}
+.detail-row .label{flex:0 0 80px;font-size:12px;color:var(--tl)}
+.detail-row .value{flex:1;font-size:14px;word-break:break-word}
+.detail-row .value.highlight{font-weight:700;color:var(--p);font-size:16px}
+.section-divider{border:none;height:1px;background:linear-gradient(to right,transparent,var(--b),transparent);margin:14px 0}
+.sect{font-size:13px;color:var(--a);margin-bottom:10px;font-weight:600}
+.expense-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:12px 28px;border-radius:12px;font-size:14px;z-index:300;display:none;backdrop-filter:blur(10px)}
+.toast.show{display:block;animation:fadeInOut 2.5s}
+.bar-chart{display:flex;align-items:flex-end;gap:5px;height:200px;padding:8px 0;overflow-x:auto}
+.bar-item{display:flex;flex-direction:column;align-items:center;min-width:44px}
+.bar{width:30px;border-radius:6px 6px 0 0;min-height:4px}
+.bar-income{background:linear-gradient(to top,var(--p),var(--pl))}
+.bar-profit{background:linear-gradient(to top,var(--s),#55EFC4)}
+.bar-label{font-size:9px;color:var(--tl);margin-top:4px;white-space:nowrap}
+.bar-value{font-size:10px;font-weight:700;color:var(--p);margin-bottom:3px}
+.chart-legend{display:flex;gap:16px;justify-content:center;margin:8px 0;font-size:12px}
+.chart-legend span{display:flex;align-items:center;gap:4px}
+.chart-legend .l-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+@keyframes fadeInOut{0%{opacity:0;transform:translate(-50%,10px)}15%{opacity:1;transform:translate(-50%,0)}85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-10px)}}
+.chip{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px}
+.chip-p{background:rgba(255,107,53,0.1);color:var(--p)}
+.chip-a{background:rgba(0,78,137,0.1);color:var(--a)}
+.chip-s{background:rgba(46,204,113,0.1);color:var(--s)}
+.exp-group{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.exp-labels{display:flex;gap:6px;flex:1;flex-wrap:wrap}
+.exp-labels .exp-item{flex:1;min-width:60px;text-align:center}
+.exp-labels .exp-item input{text-align:center;padding:10px 4px;font-size:13px}
+.exp-labels .exp-item label{font-size:10px;color:var(--tl);text-align:center;display:block;margin-bottom:2px}
+</style>
+</head>
+<body>
+<div class="header"><h1>🚛 货运记账</h1><p>运输收支 · 明细管理</p></div>
+
+<div id="page-list" class="page active">
+<div class="search-bar">
+<input type="text" id="search-input" placeholder="搜索驾驶员、货物..." oninput="loadLogs()">
+<input type="date" id="search-date" onchange="loadLogs()">
+</div>
+<div id="logs-container"><div class="empty-state"><div class="icon">🚛</div><p>暂无运输记录</p></div></div>
+</div>
+
+<div id="page-form" class="page">
+<div class="card">
+<div class="card-title"><span>📝</span><span id="form-title">新建运单</span></div>
+<form id="log-form" onsubmit="return false">
+
+<div class="sect">📅 基本信息</div>
+<div class="form-row">
+<div class="form-group"><label>年/月/日</label><input type="date" id="f-trip-date"></div>
+<div class="form-group"><label>驾驶员</label><input type="text" id="f-driver" placeholder="姓名"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>起运地</label><input type="text" id="f-origin" placeholder="出发地"></div>
+<div class="form-group"><label>运达地</label><input type="text" id="f-destination" placeholder="目的地"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>货物</label><input type="text" id="f-cargo" placeholder="货物名称"></div>
+<div class="form-group"><label>货主电话</label><input type="tel" id="f-consignor-phone" placeholder="电话"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>吨位</label><input type="number" id="f-weight" step="0.01" placeholder="0.00"></div>
+<div class="form-group"><label>货物单价</label><input type="number" id="f-unit-price" step="0.01" placeholder="元/吨"></div>
+</div>
+
+<hr class="section-divider">
+<div class="sect">💰 支出明细</div>
+<div class="exp-group">
+<div class="exp-labels">
+<div class="exp-item"><label>🚧 过路费</label><input type="number" id="f-toll" step="0.01" placeholder="0"></div>
+<div class="exp-item"><label>⛽ 加油</label><input type="number" id="f-fuel" step="0.01" placeholder="0"></div>
+<div class="exp-item"><label>💧 加水</label><input type="number" id="f-water" step="0.01" placeholder="0"></div>
+<div class="exp-item"><label>⚠ 罚款</label><input type="number" id="f-fine" step="0.01" placeholder="0"></div>
+</div>
+</div>
+
+<div class="form-group"><label>🚡 修车及其他支出明细</label></div>
+<div id="other-expenses-container">
+<div class="expense-row">
+<input type="text" class="exp-name" placeholder="项目名称" style="flex:2;width:auto">
+<input type="number" class="exp-amount" placeholder="金额" step="0.01" style="flex:1;width:auto">
+<input type="text" class="exp-note" placeholder="备注" style="flex:1;width:auto">
+<button type="button" class="btn btn-sm btn-d" onclick="removeOther(this)" style="flex:0 0 36px;padding:8px 0;border-radius:8px">✕</button>
+</div>
+</div>
+<button type="button" class="btn btn-sm btn-o" onclick="addOther()" style="margin-top:6px;width:auto">+ 添加其他支出</button>
+
+<hr class="section-divider">
+<div class="sect">📊 收支汇总</div>
+<div class="form-row">
+<div class="form-group"><label>总支出 (自动计算)</label><input type="number" id="f-total-expense" step="0.01" readonly style="background:#f5f5f5;font-weight:600"></div>
+<div class="form-group"><label>总收入</label><input type="number" id="f-freight" step="0.01" placeholder="0.00"></div>
+</div>
+<div class="form-group"><label style="color:var(--s);font-weight:700;font-size:14px">💵 利润 (自动计算)</label><input type="number" id="f-net-income" step="0.01" readonly style="background:#f0fff0;color:var(--s);font-weight:800;font-size:18px"></div>
+
+<div class="btn-group">
+<button type="button" class="btn btn-o" onclick="cancelForm()">取消</button>
+<button type="button" class="btn btn-p" onclick="saveLog()">📦 保存运单</button>
+</div>
+<input type="hidden" id="f-edit-id" value="">
+</form>
+</div>
+</div>
+<div id="page-stats" class="page">
+<div class="card">
+<div class="card-title"><span>📊</span> 经营汇总</div>
+<div class="date-filter" id="stats-filter">
+<button class="btn btn-sm active" onclick="setStats('today')">今日</button>
+<button class="btn btn-sm" onclick="setStats('week')">本周</button>
+<button class="btn btn-sm" onclick="setStats('month')">本月</button>
+<button class="btn btn-sm" onclick="setStats('year')">今年</button>
+<button class="btn btn-sm" onclick="setStats('all')">全部</button>
+</div>
+<div class="date-filter" style="margin-top:4px">
+<input type="date" id="stats-start"><span style="line-height:36px;color:var(--tl)">至</span><input type="date" id="stats-end">
+<button class="btn btn-sm btn-g" onclick="loadStats()">查询</button>
+</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card"><div class="sv" id="stat-trips">0</div><div class="sl">运输次数</div></div>
+<div class="stat-card"><div class="sv" id="stat-freight">¥0</div><div class="sl">总收入</div></div>
+<div class="stat-card"><div class="sv" id="stat-expense">¥0</div><div class="sl" style="color:var(--d)">总支出</div></div>
+<div class="stat-card"><div class="sv" id="stat-net">¥0</div><div class="sl" style="color:var(--s);font-weight:600">总利润</div></div>
+</div>
+
+<div class="stat-grid" style="grid-template-columns:1fr 1fr 1fr">
+<div class="stat-card"><div class="sv" id="stat-avg-net">¥0</div><div class="sl">次均利润</div></div>
+<div class="stat-card"><div class="sv" id="stat-drivers">0</div><div class="sl">驾驶员数</div></div>
+<div class="stat-card"><div class="sv" id="stat-days">0</div><div class="sl">工作天数</div></div>
+</div>
+
+<div class="card">
+<div class="card-title"><span>📈</span> 每日收支趋势</div>
+<div class="chart-legend"><span><span class="l-dot" style="background:var(--p)"></span>收入</span><span><span class="l-dot" style="background:var(--s)"></span>利润</span></div>
+<div id="daily-chart"><div class="empty-state" style="padding:20px"><p>暂无数据</p></div></div>
+</div>
+
+<div class="card">
+<div class="card-title"><span>🏆</span> 驾驶员排行</div>
+<div id="driver-stats"><div class="empty-state" style="padding:20px"><p>暂无数据</p></div></div>
+</div>
+</div>
+
+<div class="nav-bar">
+<button class="nav-item active" onclick="switchPage('list')"><span class="nav-icon">📋</span>记录</button>
+<button class="nav-item" onclick="switchPage('form');startNew()"><span class="nav-icon" style="font-size:26px">➕</span>新建</button>
+<button class="nav-item" onclick="switchPage('stats')"><span class="nav-icon">📊</span>统计</button>
+</div>
+
+<div class="modal-overlay" id="detail-modal" onclick="closeD(event)">
+<div class="modal" onclick="event.stopPropagation()">
+<div class="modal-handle"></div>
+<button class="modal-close" onclick="closeD()">✕</button>
+<h2 id="detail-title">🚛 运单详情</h2>
+<div id="detail-content"></div>
+<div class="btn-group" style="margin-top:16px">
+<button class="btn btn-p" onclick="editLog()">✏️ 编辑</button>
+<button class="btn btn-d" onclick="deleteLog()">🗑️ 删除</button>
+</div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+var A=window.location.origin,did=null,sp="today";
+function e(s){if(!s)return"";var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function t(s){var x=document.getElementById("toast");x.textContent=s;x.classList.add("show");setTimeout(function(){x.classList.remove("show")},2500)}
+function td(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function switchPage(p){document.querySelectorAll(".page").forEach(function(x){x.classList.remove("active")});document.getElementById("page-"+p).classList.add("active");document.querySelectorAll(".nav-item").forEach(function(n,i){n.classList.toggle("active",["list","form","stats"].indexOf(p)===i)});if(p==="list")loadLogs();if(p==="stats")loadStats()}
+function calcTotal(){var t=0;["f-toll","f-fuel","f-water","f-fine"].forEach(function(i){t+=parseFloat(document.getElementById(i).value)||0});document.querySelectorAll(".exp-amount").forEach(function(el){t+=parseFloat(el.value)||0});var inc=parseFloat(document.getElementById("f-freight").value)||0;document.getElementById("f-total-expense").value=t;document.getElementById("f-net-income").value=Math.round((inc-t)*100)/100}
+document.addEventListener("input",function(ev){if(ev.target.closest(".expense-row")||["f-toll","f-fuel","f-water","f-fine","f-freight"].indexOf(ev.target.id)>=0)calcTotal()})
+function addOther(){var c=document.getElementById("other-expenses-container"),r=document.createElement("div");r.className="expense-row";r.innerHTML='<input type=text class=exp-name placeholder=\u9879\u76ee\u540d\u79f0 style=flex:2;width:auto><input type=number class=exp-amount placeholder=\u91d1\u989d step=0.01 style=flex:1;width:auto><input type=text class=exp-note placeholder=\u5907\u6ce8 style=flex:1;width:auto><button type=button class="btn btn-sm btn-d" onclick=removeOther(this) style="flex:0 0 36px;padding:8px 0;border-radius:8px">\u2715</button>';c.appendChild(r)}
+function removeOther(b){var c=document.getElementById("other-expenses-container");b.closest(".expense-row").remove();calcTotal()}
+function getOtherExps(){var n=document.querySelectorAll(".exp-name"),a=document.querySelectorAll(".exp-amount"),o=document.querySelectorAll(".exp-note"),r=[];for(var i=0;i<n.length;i++){var name=n[i].value.trim(),amt=parseFloat(a[i].value)||0;if(name||amt)r.push({name:name,amount:amt,note:o[i].value.trim()})}return r}
+async function loadLogs(){try{var p=new URLSearchParams();var s=document.getElementById("search-input").value.trim(),d=document.getElementById("search-date").value;if(s)p.set("driver",s);if(d)p.set("date",d);var r=await fetch(A+"/api/logs?"+p.toString()),j=await r.json();if(!j.success)throw Error(j.error);var logs=j.data,c=document.getElementById("logs-container");if(!logs.length){c.innerHTML='<div class=empty-state><div class=icon>\U0001f69b</div><p>\u6682\u65e0\u8fd0\u8f93\u8bb0\u5f55</p></div>';return}c.innerHTML=logs.map(function(l){var net=l.net_income||0;return'<div class=card style=cursor:pointer onclick=showD('+l.id+')><div class=list-item style=padding:8px 0><div class=dot dot-o>\U0001f69b</div><div class=info><div class=name>'+e(l.driver||"\u672a\u6307\u5b9a")+' | '+e(l.origin||"?")+'\u2192'+e(l.destination||"?")+'</div><div class=route>\U0001f4e6 '+e(l.cargo||"")+(l.weight?' | '+l.weight+'\u5428':"")+(l.consignor_phone?' | '+l.consignor_phone:"")+'</div></div><div class=amounts><div class=fare>\u00a5'+(l.freight||0).toFixed(0)+'</div><div class=net>'+(net>=0?"+":"")+'\u00a5'+net.toFixed(0)+'</div></div></div></div>'}).join("")}catch(e){t("\u52a0\u8f7d\u5931\u8d25: "+e.message)}}
+function startNew(){document.getElementById("form-title").textContent="\U0001f4dd \u65b0\u5efa\u8fd0\u5355";document.getElementById("log-form").reset();document.getElementById("f-edit-id").value="";document.getElementById("f-trip-date").value=td();calcTotal()}
+function cancelForm(){switchPage("list")}
+async function saveLog(){var d={trip_date:document.getElementById("f-trip-date").value,origin:document.getElementById("f-origin").value.trim(),destination:document.getElementById("f-destination").value.trim(),driver:document.getElementById("f-driver").value.trim(),cargo:document.getElementById("f-cargo").value.trim(),consignor_phone:document.getElementById("f-consignor-phone").value.trim(),weight:parseFloat(document.getElementById("f-weight").value)||0,unit_price:parseFloat(document.getElementById("f-unit-price").value)||0,toll:parseFloat(document.getElementById("f-toll").value)||0,fuel:parseFloat(document.getElementById("f-fuel").value)||0,water:parseFloat(document.getElementById("f-water").value)||0,fine:parseFloat(document.getElementById("f-fine").value)||0,other_expenses:getOtherExps(),total_expense:parseFloat(document.getElementById("f-total-expense").value)||0,freight:parseFloat(document.getElementById("f-freight").value)||0,net_income:parseFloat(document.getElementById("f-net-income").value)||0};if(!d.driver){t("\u8bf7\u8f93\u5165\u9a7e\u9a76\u5458");return}try{var eid=document.getElementById("f-edit-id").value,url,method;if(eid){url=A+"/api/logs/"+eid;method="PUT"}else{url=A+"/api/logs";method="POST"}var r=await fetch(url,{method:method,headers:{"Content-Type":"application/json"},body:JSON.stringify(d)});var j=await r.json();if(!j.success)throw Error(j.error);t(eid?"\u2705 \u66f4\u65b0\u6210\u529f":"\u2705 \u5df2\u4fdd\u5b58");switchPage("list");loadLogs()}catch(e){t("\u4fdd\u5b58\u5931\u8d25: "+e.message)}}
+async function showD(id){try{var r=await fetch(A+"/api/logs/"+id),j=await r.json();if(!j.success)throw Error(j.error);var l=j.data;did=id;var oth=Array.isArray(l.other_expenses)?l.other_expenses:[];var othHtml=oth.length?oth.map(function(x){return'<span class=chip chip-p style=margin:2px>'+e(x.name)+(x.amount?' \u00a5'+x.amount.toFixed(2):"")+(x.note?' ('+e(x.note)+')':"")+'</span>'}).join(""):"<span style=color:var(--tl)>\u65e0</span>";document.getElementById("detail-title").textContent="\U0001f69b \u8fd0\u5355\u8be6\u60c5";document.getElementById("detail-content").innerHTML='<div class=detail-row><span class=label>\u65e5\u671f</span><span class=value>'+e(l.trip_date)+'</span></div><div class=detail-row><span class=label>\u8d77\u8fd0\u5730</span><span class=value>'+e(l.origin)+'</span></div><div class=detail-row><span class=label>\u8fd0\u8fbe\u5730</span><span class=value>'+e(l.destination)+'</span></div><div class=detail-row><span class=label>\u9a7e\u9a76\u5458</span><span class=value>'+e(l.driver)+'</span></div><hr class=section-divider style=margin:8px 0><div class=detail-row><span class=label>\u8d27\u7269</span><span class=value>'+e(l.cargo)+'</span></div><div class=detail-row><span class=label>\u8d27\u4e3b\u7535\u8bdd</span><span class=value>'+e(l.consignor_phone||"-")+'</span></div><div class=detail-row><span class=label>\u5428\u4f4d</span><span class=value>'+(l.weight||0)+'\u5428</span></div><div class=detail-row><span class=label>\u5355\u4ef7</span><span class=value>\u00a5'+(l.unit_price||0).toFixed(2)+'/\u5428</span></div><hr class=section-divider style=margin:8px 0><div class=detail-row><span class=label>\u8fc7\u8def\u8d39</span><span class=value>\u00a5'+(l.toll||0).toFixed(2)+'</span></div><div class=detail-row><span class=label>\u52a0\u6cb9</span><span class=value>\u00a5'+(l.fuel||0).toFixed(2)+'</span></div><div class=detail-row><span class=label>\u52a0\u6c34</span><span class=value>\u00a5'+(l.water||0).toFixed(2)+'</span></div><div class=detail-row><span class=label>\u7f5a\u6b3e</span><span class=value>\u00a5'+(l.fine||0).toFixed(2)+'</span></div><div class=detail-row><span class=label>\u5176\u4ed6\u652f\u51fa</span><span class=value>'+othHtml+'</span></div><hr class=section-divider style=margin:8px 0><div class=detail-row><span class=label style=color:var(--d)>\u603b\u652f\u51fa</span><span class=value style=color:var(--d);font-weight:600>\u00a5'+(l.total_expense||0).toFixed(2)+'</span></div><div class=detail-row><span class=label>\u603b\u6536\u5165</span><span class="value highlight">\u00a5'+(l.freight||0).toFixed(2)+'</span></div><div class=detail-row><span class=label style=font-weight:700;color:var(--s)>\u5229\u6da6</span><span class=value style=font-weight:700;color:var(--s);font-size:18px>'+(l.net_income>=0?"+":"")+'\u00a5'+(l.net_income||0).toFixed(2)+'</span></div>';document.getElementById("detail-modal").classList.add("show")}catch(e){t("\u52a0\u8f7d\u5931\u8d25: "+e.message)}}
+function closeD(e){if(!e||e.target===e.currentTarget)document.getElementById("detail-modal").classList.remove("show")}
+function editLog(){if(!did)return;document.getElementById("detail-modal").classList.remove("show");(async function(){try{var r=await fetch(A+"/api/logs/"+did),j=await r.json();if(!j.success)throw Error(j.error);var l=j.data;document.getElementById("f-edit-id").value=l.id;document.getElementById("form-title").textContent="\u270f\ufe0f \u7f16\u8f91\u8fd0\u5355";["trip_date","origin","destination","driver","cargo","consignor_phone","weight","unit_price","toll","fuel","water","fine","freight"].forEach(function(k){var el=document.getElementById("f-"+k.replace(/_/g,"-"));if(el)el.value=l[k]||""});var oth=Array.isArray(l.other_expenses)?l.other_expenses:[];var c=document.getElementById("other-expenses-container");c.innerHTML="";if(oth.length){oth.forEach(function(x){var r=document.createElement("div");r.className="expense-row";r.innerHTML='<input type=text class=exp-name value="'+e(x.name)+'" style="flex:2;width:auto"><input type=number class=exp-amount value="'+(x.amount||0)+'" step=0.01 style="flex:1;width:auto"><input type=text class=exp-note value="'+e(x.note||"")+'" style="flex:1;width:auto"><button type=button class="btn btn-sm btn-d" onclick=removeOther(this) style="flex:0 0 36px;padding:8px 0;border-radius:8px">\u2715</button>';c.appendChild(r)})}else{addOther()}calcTotal();switchPage("form")}catch(e){t("\u52a0\u8f7d\u7f16\u8f91\u5931\u8d25: "+e.message)}})()}
+async function deleteLog(){if(!did||!confirm("\u786e\u5b9a\u5220\u9664\u8fd9\u6761\u8bb0\u5f55\u5417\uff1f"))return;try{var r=await fetch(A+"/api/logs/"+did,{method:"DELETE"}),j=await r.json();if(!j.success)throw Error(j.error);t("\u2705 \u5df2\u5220\u9664");document.getElementById("detail-modal").classList.remove("show");loadLogs()}catch(e){t("\u5220\u9664\u5931\u8d25: "+e.message)}}
+function setStats(p){sp=p;document.querySelectorAll("#stats-filter .btn").forEach(function(b){b.classList.remove("active")});if(event&&event.target)event.target.classList.add("active");loadStats()}
+async function loadStats(){try{var p=new URLSearchParams();var start=document.getElementById("stats-start").value,end=document.getElementById("stats-end").value;if(start&&end){p.set("startDate",start);p.set("endDate",end)}else if(sp==="today"){p.set("date",td())}else if(sp==="week"){var d=new Date(),dw=d.getDay(),mon=new Date(d);mon.setDate(d.getDate()-dw+(dw===0?-6:1));var sun=new Date(mon);sun.setDate(mon.getDate()+6);p.set("startDate",mon.toISOString().split("T")[0]);p.set("endDate",sun.toISOString().split("T")[0])}else if(sp==="month"){var d2=new Date();p.set("month",d2.getFullYear()+"-"+String(d2.getMonth()+1).padStart(2,"0"))}else if(sp==="year"){p.set("year",String(new Date().getFullYear()))}var r=await fetch(A+"/api/stats?"+p.toString()),j=await r.json();if(!j.success)throw Error(j.error);var d3=j.data,o=d3.overview;document.getElementById("stat-trips").textContent=o.trips;document.getElementById("stat-freight").textContent="\u00a5"+(o.total_freight||0).toFixed(2);document.getElementById("stat-expense").textContent="\u00a5"+(o.total_expense||0).toFixed(2);document.getElementById("stat-net").textContent="\u00a5"+(o.total_net||0).toFixed(2);document.getElementById("stat-avg-net").textContent="\u00a5"+(o.avg_net||0).toFixed(2);document.getElementById("stat-drivers").textContent=o.driver_count;document.getElementById("stat-days").textContent=o.work_days;var dc=document.getElementById("daily-chart");if(d3.dailyStats&&d3.dailyStats.length){var mr=1;for(var i=0;i<d3.dailyStats.length;i++){if(d3.dailyStats[i].freight>mr)mr=d3.dailyStats[i].freight}dc.innerHTML="<div class=bar-chart>"+d3.dailyStats.map(function(x){return"<div class=bar-item><div class=bar-value>\u00a5"+(x.freight||0).toFixed(0)+"</div><div class=\\"bar bar-income\\" style=height:"+Math.max(4,(x.freight/mr)*120)+"px></div><div class=\\"bar bar-profit\\" style=height:"+Math.max(4,(x.net/mr)*120)+"px;margin-top:2px></div><div class=bar-label>"+x.trip_date.slice(5)+"</div></div>"}).join("")+"</div>"}else{dc.innerHTML="<div class=empty-state style=padding:20px><p>\u6682\u65e0\u6570\u636e</p></div>"}var ds=document.getElementById("driver-stats");if(d3.driverStats&&d3.driverStats.length){ds.innerHTML="<div>"+d3.driverStats.map(function(x,i){return"<div class=detail-row><span class=label style=\\"flex:0 0 30px\\">#"+(i+1)+"</span><span class=value>"+e(x.driver)+" <span class=chip chip-p style=float:right>"+x.trips+"\u6b21 \u00b7 \u00a5"+(x.freight||0).toFixed(0)+"</span></span></div>"}).join("")+"</div>"}else{ds.innerHTML="<div class=empty-state style=padding:20px><p>\u6682\u65e0\u6570\u636e</p></div>"}}catch(e){t("\u52a0\u8f7d\u7edf\u8ba1\u5931\u8d25: "+e.message)}}
+loadLogs();
+</script>
+</body>
+</html>
