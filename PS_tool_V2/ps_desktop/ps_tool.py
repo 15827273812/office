@@ -382,7 +382,9 @@ class App:
                           hint_text="每行一个箱号", border_color=C["border"], color=C["text"])
         rv = ft.Column(spacing=4, visible=False, scroll=ft.ScrollMode.AUTO)
 
-        def show(data):
+        _req_id = [0]
+        def show(data, req_id):
+            if req_id != _req_id[0]: return
             self._cache['label'] = data; rv.controls.clear(); rv.visible = True
             if data.get("type") == "inventory_export":
                 rv.controls.append(ft.Text(f"Export - {data.get('carton','')}", size=14, color=C["text"]))
@@ -429,7 +431,9 @@ class App:
         sp.on_change = lambda e: (setattr(sf,"value",sp.value.strftime("%Y-%m-%d")) or self.page.update()) if sp.value else None
         ep.on_change = lambda e: (setattr(ef,"value",ep.value.strftime("%Y-%m-%d")) or self.page.update()) if ep.value else None
 
-        def show(data):
+        _req_id = [0]
+        def show(data, req_id):
+            if req_id != _req_id[0]: return
             self._cache['date'] = data; rv.controls.clear(); rv.visible = True
             if not data.get("rows"):
                 rv.controls.append(ft.Text("无数据", color=C["text_muted"]))
