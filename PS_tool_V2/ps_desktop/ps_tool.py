@@ -50,7 +50,7 @@ class App:
             ],
             on_change=self._switch,
         )
-        self.views = [self._gi(), self._export(), self._label(), self._date(), self._incident(), self._workbench()]
+        self.views = [self._workbench(), self._gi(), self._export(), self._label(), self._date(), self._incident()]
         self.main.controls = [self.views[0]]
         self.page.add(ft.Column([
             ft.Container(
