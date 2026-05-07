@@ -178,14 +178,24 @@ class App:
                     ft.Text(str(data.get('max_gi_time','N/A')),size=14,weight=ft.FontWeight.BOLD,color=C["text"])]),
             ], spacing=24)))
 
+            def tb(hd, rs, ec=False):
+                tc = C["error"] if ec else C["accent"]
+                return ft.DataTable(
+                    column_spacing=24, horizontal_margin=12,
+                    columns=[ft.DataColumn(ft.Text(h,size=11,weight=ft.FontWeight.BOLD,color=tc)) for h in hd],
+                    rows=[ft.DataRow([ft.DataCell(ft.Text(str(r.get(h,"")),size=11,color=C["text"])) for h in hd]) for r in rs],
+                    bgcolor=C["bg_card"],border=ft.border.all(1,C["border"]),heading_row_color=C["bg_dark"],
+                    heading_row_height=28,data_row_max_height=24)
             for k, icon, title, ec in [("summary",ft.Icons.TABLE_CHART,"STSCODE 汇总",False),
                                         ("gi_status",None,"GI 状态统计",False),
                                         ("errors",ft.Icons.ERROR,"GI 错误",True)]:
                 rs = data.get(k)
                 if rs:
-                    rv.controls.append(
-                        self._card(icon, title, self._tbl_widget(list(rs[0].keys()), rs, h=100))
-                    )
+                    h = list(rs[0].keys())
+                    rv.controls.append(ft.Container(
+                        self._card(icon, title, tb(h, rs, ec)),
+                        margin=ft.margin.only(left=20),
+                    ))
 
         def refresh(e=None):
             rv.visible = False; rv.controls.clear()
