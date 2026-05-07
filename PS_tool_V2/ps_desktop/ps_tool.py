@@ -313,22 +313,44 @@ class App:
         def make_card_table(hd, rs, title):
                 col_count = len(hd)
                 col_width = max(120, 600 // col_count)
+                total = len(rs)
+                page = [0]
+                PAGE_SZ = 10
                 header_row = ft.Row(
                     [ft.Container(ft.Text(h, size=11, weight=ft.FontWeight.BOLD, color=C["text_muted"],
                             text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
                      for h in hd],
                     spacing=2, alignment=ft.MainAxisAlignment.CENTER
                 )
-                data_rows = []
-                for r in rs:
-                    row = ft.Row(
+                pi = ft.Text(f"第1页/共{max(1,(total+PAGE_SZ-1)//PAGE_SZ)}页  共{total}条", size=11, color=C["text_muted"])
+                btn_prev = ft.IconButton(ft.Icons.NAVIGATE_BEFORE, icon_size=16, tooltip="上一页", disabled=True)
+                btn_next = ft.IconButton(ft.Icons.NAVIGATE_NEXT, icon_size=16, tooltip="下一页",
+                    disabled=(PAGE_SZ >= total))
+                body = ft.Column([header_row], spacing=4)
+                def render_page():
+                    start = page[0] * PAGE_SZ
+                    end = min(start + PAGE_SZ, total)
+                    rows = [ft.Row(
                         [ft.Container(ft.Text(str(r.get(h, "")), size=12, color=C["text"], weight=ft.FontWeight.BOLD,
                                 text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
                          for h in hd],
                         spacing=2, alignment=ft.MainAxisAlignment.CENTER
-                    )
-                    data_rows.append(row)
-                return self._card(None, title, ft.Column([header_row] + data_rows, spacing=4))
+                    ) for r in rs[start:end]]
+                    body.controls = [header_row] + rows
+                    pi.value = f"第{page[0]+1}页/共{max(1,(total+PAGE_SZ-1)//PAGE_SZ)}页  {start+1}-{end}条/共{total}条"
+                    btn_prev.disabled = page[0]==0
+                    btn_next.disabled = (page[0]+1)*PAGE_SZ >= total
+                def go(delta):
+                    page[0] += delta
+                    render_page()
+                    body.update(); pi.update(); btn_prev.update(); btn_next.update()
+                btn_prev.on_click = lambda e: go(-1)
+                btn_next.on_click = lambda e: go(1)
+                render_page()
+                return self._card(None, title, ft.Column([
+                    ft.Row([pi, ft.Container(expand=True), btn_prev, btn_next], spacing=4),
+                    body,
+                ], spacing=2))
 
         def show(data):
             self._cache['export'] = data; rv.controls.clear(); rv.visible = True
