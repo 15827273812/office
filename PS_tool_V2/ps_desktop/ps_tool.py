@@ -137,7 +137,7 @@ class App:
                 tmp = export_to_excel(rows, fields, key)
             ds = os.path.join(os.path.expanduser("~"), "Desktop")
             os.makedirs(ds, exist_ok=True)
-            dst = os.path.join(ds, f"PS_Tool_{key}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx")
+            dst = os.path.join(ds, f"PS_Tool_{key}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
             shutil.copy2(tmp, dst)
             return dst
         def done(p):
@@ -170,10 +170,10 @@ class App:
             rv.controls.append(self._card(ft.Icons.BAR_CHART, "今日量", stats))
             rv.controls.append(self._card(ft.Icons.ACCESS_TIME, "CMR / GI 时间", ft.Row([
                 ft.Column([ft.Text("最后 CMR",size=11,color=C["text_muted"]),
-                    ft.Text(str(data.get("max_cmr_time","N/A")),size=14,weight=ft.FontWeight.BOLD,color=C["text"])]),
+                    ft.Text(str(data.get('max_cmr_time','N/A')),size=14,weight=ft.FontWeight.BOLD,color=C["text"])]),
                 ft.VerticalDivider(color=C["border"]),
                 ft.Column([ft.Text("最后 GI",size=11,color=C["text_muted"]),
-                    ft.Text(str(data.get("max_gi_time","N/A")),size=14,weight=ft.FontWeight.BOLD,color=C["text"])]),
+                    ft.Text(str(data.get('max_gi_time','N/A')),size=14,weight=ft.FontWeight.BOLD,color=C["text"])]),
             ], spacing=24)))
 
             def tb(hd, rs, ec=False):
@@ -219,13 +219,13 @@ class App:
         rv = ft.Column(spacing=4, visible=False, scroll=ft.ScrollMode.AUTO)
 
         def show(data):
-            self._cache["export"] = data; rv.controls.clear(); rv.visible = True
+            self._cache['export'] = data; rv.controls.clear(); rv.visible = True
             if not data.get("rows"):
                 rv.controls.append(ft.Text("无数据", color=C["text_muted"]))
             else:
                 rv.controls.append(ft.Row([ft.Icon(ft.Icons.INSERT_CHART,color=C["success"]),
-                    ft.Text(f"{data["file_prefix"]} | {len(data["rows"])} 行",size=13,color=C["text"])]))
-                rv.controls.append(self._tbl_widget(data["fields"], data["rows"]))
+                    ft.Text(f"{data['file_prefix']} | {len(data['rows'])} 行",size=13,color=C["text"])]))
+                rv.controls.append(self._tbl_widget(data['fields'], data['rows']))
             self.page.update()
 
         def qn(e):
@@ -263,17 +263,17 @@ class App:
         rv = ft.Column(spacing=4, visible=False)
 
         def show(data):
-            self._cache["label"] = data; rv.controls.clear(); rv.visible = True
+            self._cache['label'] = data; rv.controls.clear(); rv.visible = True
             if data.get("type") == "inventory_export":
-                rv.controls.append(ft.Text(f"Export - {data.get("carton","")}", size=14, color=C["text"]))
-                tabs=[ft.Tab(text=s.get("sheet_name","")[:15],content=self._tbl_widget(s["fields"],s["rows"])) for s in data.get("data",[])]
+                rv.controls.append(ft.Text(f"Export - {data.get('carton','')}", size=14, color=C["text"]))
+                tabs=[ft.Tab(text=s.get('sheet_name','')[:15],content=self._tbl_widget(s['fields'],s['rows'])) for s in data.get("data",[])]
                 rv.controls.append(ft.Tabs(tabs, selected_index=0))
             else:
                 if not data.get("fields") or not data.get("rows"):
                     rv.controls.append(ft.Text("无数据", color=C["text_muted"]))
                 else:
-                    rv.controls.append(ft.Text(f"{data.get("query_type","")} | {data.get("total",0)} 条",size=13,color=C["text"]))
-                    rv.controls.append(self._tbl_widget(data["fields"], data["rows"]))
+                    rv.controls.append(ft.Text(f"{data.get('query_type','')} | {data.get('total',0)} 条",size=13,color=C["text"]))
+                    rv.controls.append(self._tbl_widget(data['fields'], data['rows']))
             self.page.update()
 
         def q(e):
@@ -310,13 +310,13 @@ class App:
         ep.on_change = lambda e: (setattr(ef,"value",ep.value.strftime("%Y-%m-%d")) or self.page.update()) if ep.value else None
 
         def show(data):
-            self._cache["date"] = data; rv.controls.clear(); rv.visible = True
+            self._cache['date'] = data; rv.controls.clear(); rv.visible = True
             if not data.get("rows"):
                 rv.controls.append(ft.Text("无数据", color=C["text_muted"]))
             else:
                 rv.controls.append(ft.Row([ft.Icon(ft.Icons.DATE_RANGE,color=C["accent"]),
-                    ft.Text(f"{data.get("file_prefix","")} | {data.get("total",0)} 条")]))
-                rv.controls.append(self._tbl_widget(data["fields"], data["rows"]))
+                    ft.Text(f"{data.get('file_prefix','')} | {data.get('total',0)} 条")]))
+                rv.controls.append(self._tbl_widget(data['fields'], data['rows']))
             self.page.update()
 
         def q(e):
@@ -359,15 +359,15 @@ class App:
                 for url in [sn.get("url_create"), sn.get("url_create_backup")]:
                     if not url: continue
                     r = requests.post(url, headers={"Accept":"*/*","Content-type":"application/json"},
-                                      auth=(sn.get("username",""),sn.get("password","")),
+                                      auth=(sn.get('username',''),sn.get('password','')),
                                       json=payload, timeout=30)
                     if r.status_code in (200,201):
-                        return {"ok": True, "num": r.json().get("number","N/A")}
+                        return {"ok": True, "num": r.json().get('number','N/A')}
                 raise Exception("ServiceNow 所有URL均失败")
             def done(ret):
                 rv.controls.append(ft.Container(
                     ft.Row([ft.Icon(ft.Icons.CHECK_CIRCLE,color=C["success"]),
-                            ft.Text(f"✅ {ret.get("num","")} 创建成功!",color=C["success"],size=14)]),
+                            ft.Text(f"✅ {ret.get('num','')} 创建成功!",color=C["success"],size=14)]),
                     padding=12, bgcolor=ft.Colors.with_opacity(0.1,C["success"]), border_radius=8))
                 rv.visible = True; self.page.update()
             self._run(work, done)
@@ -445,15 +445,15 @@ class App:
                     ops = webdriver.ChromeOptions()
                     ops.add_experimental_option("prefs", {"credentials_enable_service":False})
                     ops.add_argument("--disable-blink-features=AutomationControlled")
-                    ops.add_experimental_option("excludeSwitches", ["enable-automation"])
+                    ops.add_experimental_option("excludeSwitches", ['enable-automation'])
                     ops.add_argument("--no-sandbox")
                     drv = webdriver.Chrome(options=ops)
                     drv.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
                     w = WebDriverWait(drv, 10)
                     drv.get("http://tcgiapp1wapp013:9090/VoiceConsole/login.action")
                     drv.maximize_window()
-                    w.until(EC.presence_of_element_located((By.NAME,"j_username"))).send_keys(vc.get("username",""))
-                    w.until(EC.presence_of_element_located((By.NAME,"j_password"))).send_keys(vc.get("password",""))
+                    w.until(EC.presence_of_element_located((By.NAME,"j_username"))).send_keys(vc.get('username',''))
+                    w.until(EC.presence_of_element_located((By.NAME,"j_password"))).send_keys(vc.get('password',''))
                     drv.find_element(By.NAME,"j_password").submit()
                     time.sleep(1)
                     drv.get("http://tcgiapp1wapp013:9090/VoiceConsole/core/search/result.action")
@@ -501,9 +501,9 @@ class App:
                     return {"error": str(ex)}
             def done(ret):
                 if "error" in ret:
-                    wb_log(f"错误: {ret["error"]}", C["error"])
+                    wb_log(f"错误: {ret['error']}", C["error"])
                 else:
-                    wb_log(f"ok: {ret["ok"]}/{ret["total"]} 已删除", C["success"])
+                    wb_log(f"ok: {ret['ok']}/{ret['total']} 已删除", C["success"])
             self._run(work, done)
         # === 5. Health Check (AS400 + pyautogui + docx) ===
         def cmd_health(e):
@@ -588,9 +588,9 @@ class App:
                     return {"error": str(ex)}
             def done(ret):
                 if "error" in ret:
-                    wb_log(f"Health Check 错误: {ret["error"]}", C["error"])
+                    wb_log(f"Health Check 错误: {ret['error']}", C["error"])
                 elif "msg" in ret:
-                    wb_log(f"Health Check {ret["msg"]}", C["success"])
+                    wb_log(f"Health Check {ret['msg']}", C["success"])
             self._run(work, done)
         # === 6. Add Voice User (Selenium + Excel) ===
         def cmd_add(e):
@@ -624,8 +624,8 @@ class App:
                     drv.get("http://tcgiapp1wapp013:9090/VoiceConsole/login.action")
                     drv.maximize_window()
                     w = WebDriverWait(drv, 10)
-                    w.until(EC.presence_of_element_located((By.NAME,"j_username"))).send_keys(vc.get("username",""))
-                    w.until(EC.presence_of_element_located((By.NAME,"j_password"))).send_keys(vc.get("password",""))
+                    w.until(EC.presence_of_element_located((By.NAME,"j_username"))).send_keys(vc.get('username',''))
+                    w.until(EC.presence_of_element_located((By.NAME,"j_password"))).send_keys(vc.get('password',''))
                     drv.find_element(By.NAME,"j_password").submit()
                     time.sleep(1)
                     drv.get("http://tcgiapp1wapp013:9090/VoiceConsole/core/operator/list.action")
@@ -671,9 +671,9 @@ class App:
                     return {"error": str(ex)}
             def done(ret):
                 if "error" in ret:
-                    wb_log(f"错误: {ret["error"]}", C["error"])
+                    wb_log(f"错误: {ret['error']}", C["error"])
                 else:
-                    wb_log(f"ok: {ret["ok"]} ok / {ret["dup"]} dup / {ret["err"]} err (共{ret["total"]})", C["success"])
+                    wb_log(f"ok: {ret['ok']} ok / {ret['dup']} dup / {ret['err']} err (共{ret['total']})", C["success"])
             self._run(work, done)
         # Button bar
         btn_row = ft.Row(spacing=6, wrap=True, controls=[
