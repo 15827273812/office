@@ -89,9 +89,10 @@ class App:
             try:
                 res = work()
                 if after:
-                    self.page.run_thread(lambda: after(res))
-            except Exception as e:
-                self.page.run_thread(lambda: self.err(f"{type(e).__name__}: {e}"))
+                    self.page.run_thread(lambda r=res: after(r))
+            except Exception as err:
+                _err = err
+                self.page.run_thread(lambda e=_err: self.err(f"{type(e).__name__}: {e}"))
             finally:
                 self.page.run_thread(lambda: setattr(self.loading, "visible", False))
                 self.page.run_thread(lambda: self._set_status("就绪") if self.status_text.value == "处理中..." else None)
