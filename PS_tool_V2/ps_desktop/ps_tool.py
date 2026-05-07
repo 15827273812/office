@@ -118,10 +118,13 @@ class App:
         extra = f"前100条/共{len(rows)}条" if len(rows) > 100 else f"共{len(rows)}条"
         return ft.Column([
             ft.Text(extra, size=11, color=C["text_muted"]),
-            ft.Container(ft.DataTable(columns=cols, rows=dr, bgcolor=C["bg_card"],
-                border=ft.border.all(1,C["border"]), heading_row_color=C["bg_dark"],
-                heading_row_height=28, data_row_max_height=22), height=h),
-        ], spacing=2)
+            ft.Container(
+                ft.DataTable(columns=cols, rows=dr, bgcolor=C["bg_card"],
+                    border=ft.border.all(1,C["border"]), heading_row_color=C["bg_dark"],
+                    heading_row_height=28, data_row_max_height=22),
+                height=h, expand=True,
+            ),
+        ], spacing=2, expand=True, scroll=ft.ScrollMode.AUTO)
 
     def _save(self, key):
         data = self._cache.get(key)
@@ -341,8 +344,10 @@ class App:
     def _incident(self):
         tf = ft.TextField(label="标题 *", hint_text="输入标题", border_color=C["border"], color=C["text"])
         df = ft.TextField(label="描述", multiline=True, min_lines=6, hint_text="详细描述", border_color=C["border"], color=C["text"])
-        cd = ft.Dropdown(label="分类", options=[ft.dropdown.Option(t) for t in ["Inquiry / Help","Incident","Service Request"]],
-                         value="Inquiry / Help", border_color=C["border"], color=C["text"], width=300)
+        itpl = self._cfg.get("service_now", {}).get("incident_templates", {})
+        cats = list(itpl.keys()) if itpl else ["Inquiry / Help", "Incident", "Service Request"]
+        cd = ft.Dropdown(label="分类", options=[ft.dropdown.Option(t) for t in cats],
+                         value=cats[0] if cats else "Inquiry / Help", border_color=C["border"], color=C["text"], width=300)
         rv = ft.Column(spacing=4, visible=False, scroll=ft.ScrollMode.AUTO)
 
         def sub(e):
@@ -406,7 +411,7 @@ class App:
         def cmd_format(e):
             t = txt()
             if not t.strip(): return wb_log("SQL 为空", C["warning"])
-            pattern = r"(?<![ctxprwdta.])\w{2}[rRwW]\w{3}"
+            pattern = r"\b(?<![ctxprwdta.])\w{2}[rRwW]\w{3}\b"
             result = re.sub(pattern, lambda m: "ctxprwdta." + m.group(0), t)
             sql_input.value = result; sql_input.update()
             wb_log("格式化完成 (已添加 ctxprwdta. 前缀)", C["success"])
