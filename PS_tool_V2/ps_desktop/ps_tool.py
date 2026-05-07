@@ -234,6 +234,7 @@ class App:
         ], spacing=0, expand=True)
     # ==================== 数据导出 Tab ====================
     def _export(self):
+        from core import query_export_data
         ni = ft.TextField(label="数字条件（每行一个）",multiline=True,min_lines=4,max_lines=8,
             hint_text="计划号 / Shipment / Packlist / Run / 箱号", border_color=C["border"], color=C["text"])
         ai = ft.TextField(label="字母条件（每行一个）",multiline=True,min_lines=4,max_lines=8,
