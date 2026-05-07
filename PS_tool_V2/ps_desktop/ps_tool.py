@@ -138,9 +138,11 @@ class App:
                 rows, fields = data.get("rows", []), data.get("fields", [])
                 if not rows: raise Exception("无数据")
                 tmp = export_to_excel(rows, fields, key)
+            # 使用 file_prefix 作为文件名，不加时间戳，直接覆盖
+            prefix = data.get("file_prefix", key)
             ds = os.path.join(os.path.expanduser("~"), "Desktop")
             os.makedirs(ds, exist_ok=True)
-            dst = os.path.join(ds, f"PS_Tool_{key}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            dst = os.path.join(ds, f"{prefix}.xlsx")
             shutil.copy2(tmp, dst)
             return dst
         def done(p):
@@ -211,7 +213,8 @@ class App:
         return ft.Column([ft.Container(ft.Column([
             ft.Row([ft.Text("GI 状态监控",size=20,weight=ft.FontWeight.BOLD,color=C["text"]),
                     ft.Container(expand=True),refresh_btn]),
-            ft.Divider(color=C["border"]), rv,
+            ft.Divider(color=C["border"]),
+            ft.Container(rv, expand=True, scroll=ft.ScrollMode.AUTO),
         ], spacing=12), padding=24, expand=True)], scroll=ft.ScrollMode.AUTO)
     # ==================== 数据导出 Tab ====================
     def _export(self):
@@ -347,8 +350,23 @@ class App:
         itpl = self._cfg.get("service_now", {}).get("incident_templates", {})
         cats = list(itpl.keys()) if itpl else ["Inquiry / Help", "Incident", "Service Request"]
         cd = ft.Dropdown(label="分类", options=[ft.dropdown.Option(t) for t in cats],
-                         value=cats[0] if cats else "Inquiry / Help", border_color=C["border"], color=C["text"], width=300)
+                         value=cats[0] if cats else "Inquiry / Help", border_color=C["border"], color=C["text"], width=300, on_change=on_cat_change)
         rv = ft.Column(spacing=4, visible=False, scroll=ft.ScrollMode.AUTO)
+
+        def on_cat_change(e):
+            """选择分类时自动填充标题和描述"""
+            sn = self._cfg.get("service_now", {})
+            itpl = sn.get("incident_templates", {}).get(cd.value, {})
+            if itpl.get("short_description"):
+                tf.value = itpl["short_description"]
+            desc_text = itpl.get("detailed_description", "xx")
+            # 将分类模板内容填写入描述框
+            lines = []
+            for k, v in itpl.items():
+                if v and k not in ("access_key",):
+                    lines.append(f"{k}: {v}")
+            df.value = "\n".join(lines)
+            self.page.update()
 
         def sub(e):
             if not tf.value: return self.err("请输入标题")
