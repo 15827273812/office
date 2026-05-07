@@ -170,13 +170,14 @@ class App:
                                 ("dns","DN",C["warning"]),("pls","PL",C["purple"])]
             ], spacing=8)
             rv.controls.append(self._card(ft.Icons.BAR_CHART, "今日量", stats))
-            rv.controls.append(self._card(ft.Icons.ACCESS_TIME, "CMR / GI 时间", ft.Row([
-                ft.Column([ft.Text("最后 CMR",size=11,color=C["text_muted"]),
-                    ft.Text(str(data.get('max_cmr_time','N/A')),size=14,weight=ft.FontWeight.BOLD,color=C["text"])]),
-                ft.VerticalDivider(color=C["border"]),
-                ft.Column([ft.Text("最后 GI",size=11,color=C["text_muted"]),
-                    ft.Text(str(data.get('max_gi_time','N/A')),size=14,weight=ft.FontWeight.BOLD,color=C["text"])]),
-            ], spacing=24)))
+            rv.controls.append(self._card(ft.Icons.ACCESS_TIME, "CMR / GI 时间", ft.Container(
+                ft.Row([
+                    ft.Column([ft.Text("最后 CMR",size=11,color=C["text_muted"]),
+                        ft.Text(str(data.get('max_cmr_time','N/A')),size=14,weight=ft.FontWeight.BOLD,color=C["text"])]),
+                    ft.VerticalDivider(color=C["border"]),
+                    ft.Column([ft.Text("最后 GI",size=11,color=C["text_muted"]),
+                        ft.Text(str(data.get('max_gi_time','N/A')),size=14,weight=ft.FontWeight.BOLD,color=C["text"])]),
+                ], spacing=24), alignment=ft.alignment.center)))
 
             def make_stat_table(hd, rs, ec=False):
                 tc = C["error"] if ec else C["text"]
@@ -203,7 +204,7 @@ class App:
                         spacing=2, alignment=ft.MainAxisAlignment.CENTER
                     )
                     data_rows.append(row)
-                return ft.Column([header_row] + data_rows, spacing=4)
+                return ft.Container(ft.Column([header_row] + data_rows, spacing=4), alignment=ft.alignment.center)
             for k, icon, title, ec in [("summary",ft.Icons.TABLE_CHART,"STSCODE 汇总",False),
                                         ("gi_status",None,"GI 状态统计",False),
                                         ("errors",ft.Icons.ERROR,"GI 错误",True)]:
