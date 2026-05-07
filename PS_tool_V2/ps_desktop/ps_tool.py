@@ -366,14 +366,16 @@ class App:
         def qn(e):
             c=[x.strip() for x in ni.value.split("\n") if x.strip()]
             if not c: return self.err("请输入数字条件")
+            _req_id[0] += 1; rid = _req_id[0]
             rv.visible=False; rv.controls.clear()
-            self._run(lambda: query_export_data(self.db, c, []), lambda d: show(d))
+            self._run(lambda: query_export_data(self.db, c, []), lambda d: show(d, rid))
 
         def qa(e):
             c=[x.strip() for x in ai.value.split("\n") if x.strip()]
             if not c: return self.err("请输入字母条件")
+            _req_id[0] += 1; rid = _req_id[0]
             rv.visible=False; rv.controls.clear()
-            self._run(lambda: query_export_data(self.db, [], c), lambda d: show(d))
+            self._run(lambda: query_export_data(self.db, [], c), lambda d: show(d, rid))
 
         query_area = ft.Column([
             ft.Text("数据导出",size=20,weight=ft.FontWeight.BOLD,color=C["text"]),
@@ -422,7 +424,8 @@ class App:
             c=[x.strip() for x in ci.value.split("\n") if x.strip()]
             if not c: return self.err("请输入箱号")
             rv.visible=False; rv.controls.clear()
-            self._run(lambda: query_label_history(self.db, c, dd.value), lambda d: show(d))
+            _req_id[0] += 1; rid = _req_id[0]
+            self._run(lambda: query_label_history(self.db, c, dd.value), lambda d: show(d, rid))
 
         return ft.Column([ft.Container(ft.Column([
             ft.Text("标签历史",size=20,weight=ft.FontWeight.BOLD,color=C["text"]),
@@ -465,7 +468,8 @@ class App:
 
         def q(e):
             rv.visible=False; rv.controls.clear()
-            self._run(lambda: query_date_range(self.db, dd.value, sp.value, ep.value), lambda d: show(d))
+            _req_id[0] += 1; rid = _req_id[0]
+            self._run(lambda: query_date_range(self.db, dd.value, sp.value, ep.value), lambda d: show(d, rid))
 
         return ft.Column([ft.Container(ft.Column([
             ft.Text("按日期查询",size=20,weight=ft.FontWeight.BOLD,color=C["text"]),
