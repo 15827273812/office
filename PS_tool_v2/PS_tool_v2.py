@@ -72,9 +72,6 @@ def clean_dataframe(df):
     return file_path
 
 
-
-
-
 window = tk.Tk()
 window.title("工作台")
 # 获取屏幕尺寸
@@ -116,7 +113,6 @@ data_export     = ttk.Frame(notebook)
 label_history   = ttk.Frame(notebook)
 
 
-
 ########################################################
 
 #  function area
@@ -128,8 +124,6 @@ def Show_Page(event):
 
     # print(f"Selected tab: {selected_tab}")
 
-
-# def Open_File():
 
 #     file_path = filedialog.askopenfilename(
 
@@ -170,9 +164,6 @@ def Show_Page(event):
 #     log.insert("insert", message)
 
 
-
-# def Copy():
-
 #     selected_text = sql.get("sel.first", "sel.last")
 
 #     clipboard = window.clipboard_append(selected_text)
@@ -183,15 +174,12 @@ def Show_Page(event):
 #     # messagebox.showinfo("提示", "已复制到剪贴板")
 
 
-# def Paste():
-
 #     clipboard_text = window.clipboard_get()
 
 #     sql.insert("insert", clipboard_text)
 
 #     message = f'{dt.now()}: 已粘贴 !\n'
 #     log.insert("insert", message)
-
 
 
 def Clear():
@@ -1706,7 +1694,6 @@ def Export():
         log.insert("insert", message)
 
 
-
 class DatabaseViewer(tk.Frame):
 
     def __init__(self, master, fields, rows):
@@ -1766,7 +1753,6 @@ def Lable_His():
         # specific_condition = [line.replace(" ", "") for line in specific_condition]
 
 
-
         # 数据库连接
         jls_extract_var = con_string
         cnxn = pyodbc.connect(jls_extract_var)
@@ -1812,70 +1798,55 @@ def Lable_His():
         data = []
         for c in crtns:
 
-            if query_type2.get() == "查询打印记录":
-                SQL = SQL_DATA['label_history']['print_record']
-            elif query_type2.get() == "CHECK OPEN WORK":
-                 SQL = SQL_DATA['label_history']['check_open_work']
-            elif query_type2.get() == "CHECK AUDIT WORK":
-                SQL = SQL_DATA['label_history']['check_audit_work']
-            elif query_type2.get() == "检查SKU是否是AMINUS":
-                SQL = SQL_DATA['label_history']['check_sku_aminus']
-            elif query_type2.get() == "QA解锁?":
-                SQL = SQL_DATA['label_history']['qa_unlock']
-            elif query_type2.get() == "SO查询":
-                SQL = SQL_DATA['label_history']['so_query']
-            elif query_type2.get() == "NFC":
-                SQL = SQL_DATA['label_history']['nfc']
-            elif query_type2.get() == "查询包装信息":
-                SQL = SQL_DATA['label_history']['pack_info']
-            elif query_type2.get() == "RSO":
-                SQL = SQL_DATA['label_history']['rso']
-            elif query_type2.get() == "查询历史库位":
-                SQL = SQL_DATA['label_history']['history_location']
-            elif query_type2.get() == "DP_area_info":
-                    SQL = SQL_DATA['label_history']['dp_area_info']
-            elif query_type2.get() == "Export inventory":
-                params = {'CARTON_PLAN': c.strip()}
+
+            # 查询类型→SQL key 映射
+            LH_MAP = {
+                "查询打印记录": "print_record",
+                "CHECK OPEN WORK": "check_open_work",
+                "CHECK AUDIT WORK": "check_audit_work",
+                "检查SKU是否是AMINUS": "check_sku_aminus",
+                "QA解锁?": "qa_unlock",
+                "SO查询": "so_query",
+                "NFC": "nfc",
+                "查询包装信息": "pack_info",
+                "RSO": "rso",
+                "查询历史库位": "history_location",
+                "DP_area_info": "dp_area_info",
+            }
+
+            qt = query_type2.get()
+
+            if qt == "Export inventory":
+                params = {"CARTON_PLAN": c.strip()}
                 SQLs = [
-                    SQL_DATA['label_history']['export_inventory_q1'].format(**params),
-                    SQL_DATA['label_history']['export_inventory_q2'].format(**params),
-                    SQL_DATA['label_history']['export_inventory_q3'].format(**params),
-                    SQL_DATA['label_history']['export_inventory_q4'].format(**params)
+                    SQL_DATA["label_history"]["export_inventory_q1"].format(**params),
+                    SQL_DATA["label_history"]["export_inventory_q2"].format(**params),
+                    SQL_DATA["label_history"]["export_inventory_q3"].format(**params),
+                    SQL_DATA["label_history"]["export_inventory_q4"].format(**params)
                 ]
-                # Create a new Excel writer object using xlsxwriter
-                excel_filename = f"inventory.xlsx"
+                excel_filename = "inventory.xlsx"
                 workbook = xlsxwriter.Workbook(excel_filename)
                 worksheet = workbook.add_worksheet('Inventory')
-
-                # Define a format for centering text
                 center_format = workbook.add_format({'align': 'center', 'valign': 'vcenter'})
-
                 start_row = 0
                 for i, sql in enumerate(SQLs):
-                    formatted_sql = sql.format(**params)
-                    rows = cur.execute(formatted_sql).fetchall()
+                    rows = cur.execute(sql).fetchall()
                     fields = [field[0] for field in cur.description]
-
-                    # Write headers
                     worksheet.write_row(start_row, 0, fields, center_format)
                     start_row += 1
-
-                    # Write the data rows
                     for row in rows:
                         worksheet.write_row(start_row, 0, row, center_format)
                         start_row += 1
-
-                    # Leave two empty rows between queries
                     start_row += 2
-
-                # Close the workbook
                 workbook.close()
+                msg = dt.now().strftime("%Y-%m-%d %H:%M:%S") + ": 数据已导出至 " + excel_filename + "!\n"
+                label_log.insert("insert", msg)
+                return
 
-                message = f'{dt.now()}: 数据已导出至 {excel_filename}!\n'
-                label_log.insert("insert", message)
-                return    
-            else:
-                SQL = SQL_DATA['label_history']['default_location']
+            # 通用查询
+            sql_key = LH_MAP.get(qt, "default_location")
+            SQL = SQL_DATA["label_history"][sql_key]
+
             SQL = SQL.replace('CARTON_PLAN', f"{c.strip()}")
             rows = cur.execute(SQL).fetchall()
             if len(rows):
@@ -2315,7 +2286,6 @@ file_name = tk.Entry(
 # file_formats = ["xlsx", "xls"]
 
 # file_type = ttk.Combobox(file_frame, values=file_formats, state="readonly", width= 5, height= 1)
-
 
 
 filename_txt.pack(side=tk.LEFT,padx=2,pady=2)
@@ -2804,98 +2774,44 @@ def query_and_export():
     start_date = start_date_entry.get()
     end_date = end_date_entry.get()
     try:
-        if start_date and end_date:
-            if query_type_value == "Sorter(VNA来货)":
-                SQL = SQL_DATA['date_query']['sorter_vna']
-                file_prefix = "Sorter"
-            
 
-            elif query_type_value == "Final-Sorter(发货)":
-                SQL = SQL_DATA['date_query']['final_sorter']
-                file_prefix = "Final-Sorter"
+        # 查询类型映射字典
+        QUERY_MAP = {
+            "Sorter(VNA来货)": ("sorter_vna", "Sorter"),
+            "Final-Sorter(发货)": ("final_sorter", "Final-Sorter"),
+            "DP & PROMO & NSRT区域补货": ("dp_promo_nsrt_replenish", "DP & PROMO & NSRT区域补货"),
+            "DP & PROMO & NSRT区域发货": ("dp_promo_nsrt_shipping", "DP & PROMO & NSRT区域发货"),
+            "异常tote": ("abnormal_tote", "异常tote"),
+            "发货箱型数量(9种)": ("shipping_box_types", "发货箱型数量"),
+            "收货人效": ("receiving_efficiency", "收货人效"),
+            "生产信息": ("production_info", "生产信息"),
+            "Cycle count data": ("cycle_count_data", "Cycle count data"),
+            "Packlist_check": ("packlist_check", "Packlist_check"),
+            "Picking": ("picking", "Picking"),
+            "Replenishment": ("replenishment_qty", "Replenishment"),
+            "FM": ("fm", "FM"),
+            "GR": ("gr", "GR"),
+            "Pre_SKU_info": ("pre_sku_info", "Pre_SKU_info"),
+            "FW_Conveyor_info": ("fw_conveyor_info", "FW_Conveyor_info"),
+            "AP_Conveyor_info": ("ap_conveyor_info", "AP_Conveyor_info"),
+            "Hopper_info": ("hopper_info", "Hopper_info"),
+            "Staging_info": ("staging_info", "Staging_info"),
+            "FM_inventory": ("fm_inventory", "FM_inventory"),
+            "Oversize_inventory": ("oversize_inventory", "Oversize_inventory"),
+        }
 
-            elif query_type_value == "DP & PROMO & NSRT区域补货":
-                SQL = SQL_DATA['date_query']['dp_promo_nsrt_replenish']
-                file_prefix = "DP & PROMO & NSRT区域补货"
-
-            elif query_type_value == "DP & PROMO & NSRT区域发货":
-                SQL = SQL_DATA['date_query']['dp_promo_nsrt_shipping']
-                file_prefix = "DP & PROMO & NSRT区域发货"
-            elif query_type_value == "异常tote":
-                SQL = SQL_DATA['date_query']['abnormal_tote']
-                file_prefix = "异常tote"
-
-
-            elif query_type_value == "发货箱型数量(9种)":
-                SQL = SQL_DATA['date_query']['shipping_box_types']
-                file_prefix = "发货箱型数量"
-
-            elif query_type_value == "收货人效":
-                SQL = SQL_DATA['date_query']['receiving_efficiency']
-                file_prefix = "收货人效"
-
-            elif query_type_value == "生产信息":
-                SQL = SQL_DATA['date_query']['production_info']
-                file_prefix = "生产信息"
-
-            elif query_type_value == "Cycle count data":
-                SQL = SQL_DATA['date_query']['cycle_count_data']
-                file_prefix = "Cycle count data"
-
-            elif query_type_value == "Packlist_check":
-                SQL = SQL_DATA['date_query']['packlist_check']
-                file_prefix = "Packlist_check"
-
-            elif query_type_value == "Picking":
-                SQL = SQL_DATA['date_query']['picking']
-                file_prefix = "Picking"
-
-            elif query_type_value == "Replenishment":
-                SQL = SQL_DATA['date_query']['replenishment_qty']
-                file_prefix = "Replenishment"
-
-            elif query_type_value == "FM":
-                SQL = SQL_DATA['date_query']['fm']
-                file_prefix = "FM"
-            
-            elif query_type_value == "GR":
-                SQL = SQL_DATA['date_query']['gr']
-                file_prefix = "GR"
-            elif query_type_value == "Pre_SKU_info":
-                SQL = SQL_DATA['date_query']['pre_sku_info']
-                file_prefix = "Pre_SKU_info"
-        elif query_type_value == "FW_Conveyor_info":
-                SQL = SQL_DATA['date_query']['fw_conveyor_info']
-                file_prefix = "FW_Conveyor_info"
-
-        elif query_type_value == "AP_Conveyor_info":
-                SQL = SQL_DATA['date_query']['ap_conveyor_info']
-                file_prefix = "AP_Conveyor_info"
-
-        elif query_type_value == "Hopper_info":
-                SQL = SQL_DATA['date_query']['hopper_info']
-                file_prefix = "Hopper_info"
-
-        elif query_type_value == "Staging_info":
-                SQL = SQL_DATA['date_query']['staging_info']
-                file_prefix = "Staging_info"
-
-        elif query_type_value == "FM_inventory":
-                SQL = SQL_DATA['date_query']['fm_inventory']
-                file_prefix = "FM_inventory"
-
-        elif query_type_value == "Oversize_inventory":
-                SQL = SQL_DATA['date_query']['oversize_inventory']
-                file_prefix = "Oversize_inventory"
-
-        if start_date and end_date:
-            data = cur.execute(SQL, (start_date, end_date)).fetchall()
+        if query_type_value in QUERY_MAP:
+            config_key, file_prefix = QUERY_MAP[query_type_value]
+            SQL = SQL_DATA["date_query"][config_key]
+            if start_date and end_date:
+                data = cur.execute(SQL, (start_date, end_date)).fetchall()
+            else:
+                data = cur.execute(SQL).fetchall()
         else:
-            data = cur.execute(SQL).fetchall()
-        # 获取字段名
-        fields = [field[0] for field in cur.description]
+            msg = "query_and_export: 未知查询类型 " + str(query_type_value)
+            log_message(log_text_shipping, msg)
+            return
 
-        # 检查数据是否存在
         if not data:
             log_message(log_text_shipping,'查询结果为空，没有数据可导出。')
             return
@@ -3145,7 +3061,6 @@ carton_scrollbar.grid(row=0, column=2, sticky="wns")
 carton.configure(yscrollcommand=carton_scrollbar.set)
 
 
-
 query = tk.Button(
     master=lable_frame,
 
@@ -3192,7 +3107,6 @@ label_log_scrollbar.grid(row=1, column=2, sticky="wns")
 label_log.configure(yscrollcommand=label_log_scrollbar.set)
 
 
-
 # # 调整布局
 # specific_condition_txt.grid(row=0, column=0, sticky='w', pady=5, padx=5)
 # specific_input.grid(row=0, column=1, sticky='w', pady=5, padx=5)
@@ -3210,7 +3124,6 @@ label_log.grid(row=2, column=1, sticky='nw', pady=5, padx=5)
 def clear_other_inputs(event, other_widgets):
     for widget in other_widgets:
         widget.delete("1.0", tk.END)
-
 
 
 ########
@@ -3440,7 +3353,6 @@ log_txt_frame.grid(row=5, column=0, sticky= 'w')
 lable_frame.grid(row=1, column=0, sticky= 'n', pady=5, padx= 5)
 
 canvas_frame.grid(row=2, column=0, sticky= 'n', pady=5, padx= 5)
-
 
 
 notebook.add(data_export, text="导数据")
