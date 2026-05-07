@@ -757,175 +757,366 @@ class App:
                     doc = docx.Document()
                     doc.add_paragraph(f"AS400 Health Check Report - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-                    def create_screenshots(name, pg, d):
-                        shot = pyautogui.screenshot(region=(0, 100, pyautogui.size().width, 980))
-                        sheet_name = name.replace(" ", "_")[:31]
-                        pic = os.path.join("pictures", f"screenshot_{sheet_name}_{pg}.png")
-                        shot = shot.resize((shot.width // 2, shot.height // 2), Image.Resampling.LANCZOS)
-                        shot.save(pic, optimize=True, quality=60)
-                        if d is not None:
-                            d.add_picture(pic, width=docx.shared.Inches(4.9), height=docx.shared.Inches(3.0))
+                    def copy_page_text():
+                        pyautogui.hotkey('ctrl', 'a')
+                        pyautogui.hotkey('ctrl', 'c')
+                        clipboard_text = pyperclip.paste()
+                        with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding="utf - 8") as temp_file:
+                            temp_file.write(clipboard_text)
+                            temp_file.flush()
+                            return temp_file.name
+
+                    def add_screenshot_to_word(screenshot_path, doc):
+                        doc.add_picture(screenshot_path, width=docx.shared.Inches(4.9), height=docx.shared.Inches(3.0))
+
+                    def create_screenshots(job_name, page, doc=None):
+                        job_start_y = 100
+                        job_height = 980
+                        sheet_name = job_name.replace(' ', '_')[:31]
+                        if True:  # was should_copy_text check
+                            temp_file_name = copy_page_text()
+                            with open(temp_file_name, 'r', encoding="utf - 8") as temp_file:
+                                temp_file.read()
+                            os.remove(temp_file_name)
+                        screenshot = pyautogui.screenshot(region=(0, job_start_y, pyautogui.size().width, job_height))
+                        screenshot = screenshot.resize((screenshot.width // 2, screenshot.height // 2), Image.Resampling.LANCZOS)
+                        screenshot_path = os.path.join('pictures', f'screenshot_{sheet_name}_{page}.png')
+                        screenshot.save(screenshot_path, optimize=True, quality=60)
+                        if doc is not None:
+                            add_screenshot_to_word(screenshot_path, doc)
                         time.sleep(1)
 
-                    # ========== AS400 JOBS ==========
-                    doc.add_paragraph("1.check STRSQL")
-                    pyautogui.press("tab"); pyautogui.typewrite("STRSQL"); pyautogui.press("enter")
-                    pyautogui.keyDown("shift"); pyautogui.press("f2"); pyautogui.press("tab"); pyautogui.keyUp("shift")
-                    time.sleep(0.5); create_screenshots("STRSQL", 1, doc)
-                    pyautogui.press("f12"); pyautogui.press("enter")
+                    def take_screenshots():
+                        for job_name in jobs:
+                            page = 1
 
-                    doc.add_paragraph("XPDS CTXPR")
-                    pyautogui.press("tab"); pyautogui.typewrite("XPDS CTXPR"); pyautogui.press("enter"); pyautogui.press("enter")
-                    time.sleep(0.5); create_screenshots("XPDS_CTXPR", 1, doc)
-                    pyautogui.press("f3")
+                            if job_name == 'STRSQL':
+                                pyautogui.press('tab')
+                                pyautogui.typewrite(job_name)
+                                pyautogui.press('enter')
+                                pyautogui.keyDown('shift')
+                                pyautogui.press('f2')
+                                pyautogui.press('tab')
+                                pyautogui.keyUp('shift')
+                                doc.add_paragraph(f"1.check if system can login or not (both job role menu and STRSQL menu)两张")
+                                time.sleep(0.5)
+                                create_screenshots(job_name, page, doc)
+                                pyautogui.press('f12')
+                                pyautogui.press('enter')
 
-                    doc.add_paragraph("General Link - 检查F status")
-                    pyautogui.press("tab"); pyautogui.typewrite("XPDS CTXPR"); pyautogui.press("enter"); pyautogui.press("enter")
-                    pyautogui.typewrite("60"); pyautogui.press("enter"); pyautogui.typewrite("10"); pyautogui.press("enter")
-                    pyautogui.typewrite("60"); pyautogui.press("enter"); pyautogui.typewrite("50"); pyautogui.press("enter")
-                    pyautogui.typewrite("10"); pyautogui.press("enter")
-                    for _ in range(3): pyautogui.press("tab")
-                    pyautogui.typewrite("F"); time.sleep(0.5)
-                    pyautogui.press("tab"); pyautogui.press("tab")
-                    for _ in range(16): pyautogui.press("space")
-                    pyautogui.press("enter")
-                    time.sleep(0.5); create_screenshots("General_Link", 1, doc)
-                    pyautogui.press("f3"); pyautogui.press("f3"); pyautogui.press("enter")
+                            if job_name == 'XPDS CTXPR':
+                                pyautogui.press('tab')
+                                pyautogui.typewrite(job_name)
+                                pyautogui.press('enter')
+                                pyautogui.press('enter')
+                                time.sleep(0.5)
+                                create_screenshots(job_name, page, doc)
+                                pyautogui.press('f3')
 
-                    doc.add_paragraph("WRKMQM")
-                    pyautogui.press("tab"); pyautogui.typewrite("WRKMQM"); pyautogui.press("enter")
-                    time.sleep(0.5); create_screenshots("WRKMQM", 1, doc)
-                    pyautogui.press("f3")
+                            if job_name == 'General Link':
+                                pyautogui.press('tab')
+                                pyautogui.typewrite("XPDS CTXPR")
+                                pyautogui.press('enter')
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("60")
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("10")
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("60")
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("50")
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("10")
+                                pyautogui.press('enter')
+                                for _ in range(3):
+                                    pyautogui.press('tab')
+                                pyautogui.typewrite("F")
+                                time.sleep(0.5)
+                                pyautogui.press('tab')
+                                pyautogui.press('tab')
+                                for _ in range(16):
+                                    pyautogui.press('space')
+                                pyautogui.press('enter')
+                                doc.add_paragraph(f"3.check general link have F status or not:")
+                                time.sleep(0.5)
+                                create_screenshots(job_name, page, doc)
+                                pyautogui.press('f3')
+                                pyautogui.press('f3')
+                                pyautogui.press('enter')
 
-                    doc.add_paragraph("RBM")
-                    # RBM DAILYPR
-                    pyautogui.typewrite("RBM"); pyautogui.press("enter"); pyautogui.typewrite("1"); pyautogui.press("enter")
-                    time.sleep(0.5)
-                    if datetime.now().weekday() in [0,1,2,3,4,5,6]:
-                        pyautogui.typewrite("#DAILYPR"); pyautogui.press("enter"); pyautogui.typewrite("11"); pyautogui.press("enter")
-                        time.sleep(0.5); create_screenshots("RBM_DAILYPR", 1, doc)
-                        pyautogui.press("f3")
-                    pyautogui.press("f3"); pyautogui.typewrite("1"); pyautogui.press("enter")
-                    pyautogui.typewrite("CTXPRG_STR"); pyautogui.press("enter"); pyautogui.typewrite("11"); pyautogui.press("enter")
-                    time.sleep(0.5); create_screenshots("RBM_CTXPRG_STR", 2, doc)
-                    pyautogui.press("f3"); pyautogui.press("f3"); pyautogui.press("f3")
+                            if job_name == 'WRKMQM':
+                                pyautogui.press('tab')
+                                pyautogui.typewrite(job_name)
+                                pyautogui.press('enter')
+                                doc.add_paragraph(f"4.check MQ 第一页(WRKMQM)")
+                                time.sleep(0.5)
+                                create_screenshots(job_name, page, doc)
+                                pyautogui.press('f3')
 
-                    doc.add_paragraph("WATCHDOG")
-                    pyautogui.press("tab"); pyautogui.typewrite("XPDS CTXPR"); pyautogui.press("enter"); pyautogui.press("enter")
-                    pyautogui.typewrite("60"); pyautogui.press("enter"); pyautogui.typewrite("110"); pyautogui.press("enter")
-                    pyautogui.typewrite("20"); pyautogui.press("enter"); pyautogui.typewrite("50"); pyautogui.press("enter")
-                    pyautogui.press("tab"); pyautogui.typewrite("13"); pyautogui.press("tab"); pyautogui.press("tab")
-                    for _ in range(6): pyautogui.typewrite("13")
-                    pyautogui.press("enter")
-                    pg = 1; f12_cnt = 1; first_after_f12 = True
-                    for pgd in range(15):
-                        if pgd == 0:
-                            time.sleep(0.5); create_screenshots("WATCHDOG", pg, doc); pg += 1
-                        if pgd <= 14:
-                            pyautogui.keyDown("ctrl"); pyautogui.press("q"); pyautogui.keyUp("ctrl")
-                        if pgd in [1,3,7,8,13,14]:
-                            time.sleep(0.5); create_screenshots("WATCHDOG", pg, doc); pg += 1
-                        if pgd in [1,3,8,13,14]:
-                            pyautogui.press("f12")
-                            if first_after_f12:
-                                labels = {1:"CTXPRIML:2张",2:"CTXPRIMM:3张,第一和最后两张",3:"CTXPRIMP:2张(第一和最后一张)",4:"CTXPRIMS:2张",5:"CTXPRIMV:第一页"}
-                                doc.add_paragraph(labels.get(f12_cnt,""))
-                                first_after_f12 = False
-                            if f12_cnt <= 5:
-                                first_after_f12 = True; time.sleep(0.5); create_screenshots("WATCHDOG", pg, doc); pg += 1; f12_cnt += 1
-                            if f12_cnt == 6:
-                                pyautogui.press("f12"); doc.add_paragraph("CTXPRWMO 1张"); time.sleep(0.5); create_screenshots("WATCHDOG", pg, doc)
-                    pyautogui.press("f3"); pyautogui.press("f3")
+                            if job_name == 'WRKACTJOB SBS(CTXPRCDC)':
+                                pyautogui.press('tab')
+                                pyautogui.typewrite(job_name)
+                                pyautogui.press('enter')
+                                pyautogui.press('f7')
+                                pyautogui.typewrite('XPDSN')
+                                pyautogui.press('enter')
+                                time.sleep(0.5)
+                                doc.add_paragraph(f"WRKACTJOB SBS(CTXPRCDC):")
+                                time.sleep(0.5)
+                                create_screenshots(job_name, page, doc)
+                                pyautogui.press('f3')
 
-                    doc.add_paragraph("WRKACTJOB SBS(CTXPRCDC)")
-                    pyautogui.press("tab"); pyautogui.typewrite("WRKACTJOB SBS(CTXPRCDC)"); pyautogui.press("enter")
-                    pyautogui.press("f7"); pyautogui.typewrite("XPDSN"); pyautogui.press("enter")
-                    time.sleep(0.5); create_screenshots("WRKACTJOB_CDC", 1, doc)
-                    pyautogui.press("f3")
+                            if job_name == 'WRKACTJOB':
+                                pyautogui.press('tab')
+                                pyautogui.typewrite(job_name)
+                                pyautogui.press('enter')
+                                pyautogui.keyDown('shift')
+                                pyautogui.press('f4')
+                                pyautogui.keyUp('shift')
+                                pyautogui.press('f7')
+                                pyautogui.typewrite("MSGW")
+                                pyautogui.press('tab')
+                                pyautogui.typewrite("*STS")
+                                pyautogui.press('enter')
+                                paragraph = doc.add_paragraph()
+                                paragraph.add_run(f"6.wrkactjob check MSGW job\nWRKACTJOB:")
+                                time.sleep(0.5)
+                                create_screenshots(job_name, page, doc)
+                                page += 1
+                                pyautogui.press('f3')
 
-                    doc.add_paragraph("WRKACTJOB - 检查 MSGW")
-                    pyautogui.press("tab"); pyautogui.typewrite("WRKACTJOB"); pyautogui.press("enter")
-                    for _ in range(63): pyautogui.press("right")
-                    pyautogui.keyDown("shift"); pyautogui.press("f4"); pyautogui.keyUp("shift")
-                    pyautogui.press("f7"); pyautogui.typewrite("MSGW"); pyautogui.press("tab"); pyautogui.typewrite("*STS"); pyautogui.press("enter")
-                    time.sleep(0.5); create_screenshots("WRKACTJOB", 2, doc)
-                    pyautogui.press("f3")
+                            if job_name == 'DSPFD FILE(SVSDLNA)':
+                                pyautogui.press('tab')
+                                pyautogui.typewrite(job_name)
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("B")
+                                pyautogui.press('enter')
+                                time.sleep(1)
+                                doc.add_paragraph(f"7.DSPFD FILE(SVSDLNA) 最后一页")
+                                time.sleep(0.5)
+                                create_screenshots(job_name, page, doc)
+                                pyautogui.press('f3')
 
-                    doc.add_paragraph("DSPFD FILE(SVSDLNA)")
-                    pyautogui.press("tab"); pyautogui.typewrite("DSPFD FILE(SVSDLNA)"); pyautogui.press("enter")
-                    pyautogui.typewrite("B"); pyautogui.press("enter"); time.sleep(1)
-                    time.sleep(0.5); create_screenshots("DSPFD", 1, doc)
-                    pyautogui.press("f3")
+                            if job_name == 'WRKLNK':
+                                pyautogui.press('tab')
+                                pyautogui.typewrite(job_name)
+                                pyautogui.press('enter')
+                                time.sleep(0.5)
+                                for _ in range(7):
+                                    pyautogui.press('down')
+                                pyautogui.typewrite("5")
+                                pyautogui.press('enter')
+                                time.sleep(0.5)
+                                pyautogui.keyDown('ctrl')
+                                pyautogui.press('q')
+                                pyautogui.keyUp('ctrl')
+                                pyautogui.press('down')
+                                pyautogui.typewrite("5")
+                                pyautogui.press('enter')
+                                time.sleep(0.5)
+                                pyautogui.press('down')
+                                pyautogui.press('down')
+                                pyautogui.typewrite("5")
+                                pyautogui.press('enter')
+                                time.sleep(0.5)
+                                doc.add_paragraph(f"8.WRKLNK/home/CHINA/PRD")
+                                time.sleep(0.5)
+                                create_screenshots(job_name, page, doc)
+                                pyautogui.press('f3')
+                                pyautogui.press('enter')
 
-                    doc.add_paragraph("WRKLNK")
-                    pyautogui.press("tab"); pyautogui.typewrite("WRKLNK"); pyautogui.press("enter"); time.sleep(0.5)
-                    for _ in range(7): pyautogui.press("down")
-                    pyautogui.typewrite("5"); pyautogui.press("enter"); time.sleep(0.5)
-                    pyautogui.keyDown("ctrl"); pyautogui.press("q"); pyautogui.keyUp("ctrl")
-                    pyautogui.press("down"); pyautogui.typewrite("5"); pyautogui.press("enter"); time.sleep(0.5)
-                    pyautogui.press("down"); pyautogui.press("down"); pyautogui.typewrite("5"); pyautogui.press("enter"); time.sleep(0.5)
-                    time.sleep(0.5); create_screenshots("WRKLNK", 1, doc)
-                    pyautogui.press("f3"); pyautogui.press("enter")
+                            if job_name == 'DSPMSG MSGQ(*SYSOPR) SEV(99)':
+                                pyautogui.press('tab')
+                                pyautogui.typewrite(job_name)
+                                pyautogui.press('enter')
+                                time.sleep(2)
+                                doc.add_paragraph(f"9.DSPMSG MSGQ(*SYSOPR) SEV(99):")
+                                time.sleep(0.5)
+                                create_screenshots("SYSOPR", page, doc)
+                                pyautogui.press('f3')
 
-                    doc.add_paragraph("DSPMSG MSGQ(*SYSOPR) SEV(99)")
-                    pyautogui.press("tab"); pyautogui.typewrite("DSPMSG MSGQ(*SYSOPR) SEV(99)"); pyautogui.press("enter")
-                    time.sleep(2); time.sleep(0.5); create_screenshots("SYSOPR", 1, doc)
-                    pyautogui.press("f3")
+                            if job_name == 'DSPMSG MSGQ(CTXPRWSCD) SEV(99)':
+                                pyautogui.press('tab')
+                                pyautogui.typewrite(job_name)
+                                pyautogui.press('enter')
+                                time.sleep(5)
+                                doc.add_paragraph(f"DSPMSG MSGQ(CTXPRWSCD) SEV(99)")
+                                time.sleep(0.5)
+                                create_screenshots("CTXPRWSCD", page, doc)
+                                pyautogui.press('f3')
 
-                    doc.add_paragraph("DSPMSG MSGQ(CTXPRWSCD) SEV(99)")
-                    pyautogui.press("tab"); pyautogui.typewrite("DSPMSG MSGQ(CTXPRWSCD) SEV(99)"); pyautogui.press("enter")
-                    time.sleep(5); time.sleep(0.5); create_screenshots("CTXPRWSCD", 1, doc)
-                    pyautogui.press("f3")
+                            if job_name == 'WATCHDOG':
+                                pyautogui.press('tab')
+                                pyautogui.typewrite("XPDS CTXPR")
+                                pyautogui.press('enter')
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("60")
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("110")
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("20")
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("50")
+                                pyautogui.press('enter')
+                                pyautogui.press('tab')
+                                pyautogui.typewrite("13")
+                                pyautogui.press('tab')
+                                pyautogui.press('tab')
+                                for _ in range(6):
+                                    pyautogui.typewrite("13")
+                                pyautogui.press('enter')
+                                page_down_count = 0
+                                f12_count = 1
+                                first_screenshot_after_f12 = True
+                                for page_down_count in range(0, 14):
+                                    if page_down_count == 0:
+                                        doc.add_paragraph(f"2.check WD CTXPRILM:两张")
+                                        time.sleep(0.5)
+                                        create_screenshots(job_name, page, doc)
+                                        page += 1
+                                    if page_down_count <= 14:
+                                        pyautogui.keyDown('ctrl')
+                                        pyautogui.press('q')
+                                        pyautogui.keyUp('ctrl')
+                                        page_down_count += 1
+                                    if page_down_count in [1, 3, 7, 8, 13, 14]:
+                                        time.sleep(0.5)
+                                        create_screenshots(job_name, page, doc)
+                                        page += 1
+                                    if page_down_count in [1, 3, 8, 13, 14]:
+                                        pyautogui.press('f12')
+                                        if first_screenshot_after_f12:
+                                            if f12_count == 1:
+                                                doc.add_paragraph(f"CTXPRIML:2张")
+                                            elif f12_count == 2:
+                                                doc.add_paragraph(f"CTXPRIMM:3张,第一和最后两张")
+                                            elif f12_count == 3:
+                                                doc.add_paragraph(f"CTXPRIMP:2张(第一和最后一张)")
+                                            elif f12_count == 4:
+                                                doc.add_paragraph(f"CTXPRIMS:2张")
+                                            elif f12_count == 5:
+                                                doc.add_paragraph(f"CTXPRIMV:第一页")
+                                            first_screenshot_after_f12 = False
+                                        if f12_count <= 5:
+                                            first_screenshot_after_f12 = True
+                                            time.sleep(0.5)
+                                            create_screenshots(job_name, page, doc)
+                                            page += 1
+                                            f12_count += 1
+                                        if f12_count == 6:
+                                            pyautogui.press('f12')
+                                            doc.add_paragraph(f"CTXPRWMO 1张")
+                                            time.sleep(0.5)
+                                            create_screenshots(job_name, page, doc)
+                                pyautogui.press('f3')
+                                pyautogui.press('f3')
 
+                            if job_name == 'RBM':
+                                pyautogui.typewrite(job_name)
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("1")
+                                pyautogui.press('enter')
+                                time.sleep(0.5)
+                                weekday_num = datetime.now().weekday()
+                                if weekday_num in [0, 1, 2, 3, 4, 5, 6]:
+                                    pyautogui.typewrite("#DAILYPR")
+                                    pyautogui.press('enter')
+                                    pyautogui.typewrite("11")
+                                    pyautogui.press('enter')
+                                    time.sleep(0.5)
+                                    paragraph = doc.add_paragraph()
+                                    paragraph.add_run(f"5.check daily/weekly/sunday/monthly/CDC job is complete or not\n#DAILYPR:")
+                                    time.sleep(0.5)
+                                    create_screenshots(job_name, page, doc)
+                                    page += 1
+                                    pyautogui.press('f3')
+                                pyautogui.press('f3')
+                                pyautogui.typewrite("1")
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("CTXPRG_STR")
+                                pyautogui.press('enter')
+                                pyautogui.typewrite("11")
+                                pyautogui.press('enter')
+                                time.sleep(0.5)
+                                doc.add_paragraph(f"CTXPRG_STR:")
+                                time.sleep(0.5)
+                                create_screenshots(job_name, page, doc)
+                                pyautogui.press('f3')
+                                pyautogui.press('f3')
+                                pyautogui.press('f3')
+
+                    jobs = [
+                        "STRSQL", "XPDS CTXPR", "WATCHDOG", "General Link",
+                        "WRKMQM", "RBM", "WRKACTJOB SBS(CTXPRCDC)", "WRKACTJOB",
+                        "DSPFD FILE(SVSDLNA)", "WRKLNK",
+                        "DSPMSG MSGQ(*SYSOPR) SEV(99)", "DSPMSG MSGQ(CTXPRWSCD) SEV(99)"
+                    ]
+                    take_screenshots()
                     doc.save(word_path)
 
                     # ========== Web Screenshots ==========
                     try:
                         options = webdriver.ChromeOptions()
                         options.add_experimental_option("prefs", {"credentials_enable_service": False, "profile.password_manager_enabled": False})
-                        options.add_argument("--disable-blink-features=AutomationControlled")
+                        options.add_argument('--disable-blink-features=AutomationControlled')
                         options.add_experimental_option("excludeSwitches", ["enable-automation"])
-                        options.add_experimental_option("useAutomationExtension", False)
-                        options.add_argument("--disable-extensions"); options.add_argument("--no-sandbox")
-                        options.add_argument("--disable-dev-shm-usage"); options.add_argument("--disable-gpu")
+                        options.add_experimental_option('useAutomationExtension', False)
+                        options.add_argument('--disable-extensions')
+                        options.add_argument('--no-sandbox')
+                        options.add_argument('--disable-dev-shm-usage')
+                        options.add_argument('--disable-gpu')
                         driver = webdriver.Chrome(options=options)
                         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
                         driver.maximize_window()
-                        # Voice Console
                         driver.get("http://tcgiapp1wapp013:9090/VoiceConsole/login.action")
                         wait = WebDriverWait(driver, 10)
-                        user = wait.until(EC.presence_of_element_located((By.NAME, "j_username")))
-                        pwd = wait.until(EC.presence_of_element_located((By.NAME, "j_password")))
-                        user.send_keys("admin"); pwd.send_keys("admin"); pwd.submit()
+                        username = wait.until(EC.presence_of_element_located((By.NAME, "j_username")))
+                        password = wait.until(EC.presence_of_element_located((By.NAME, "j_password")))
+                        username.send_keys("admin")
+                        password.send_keys("admin")
+                        password.submit()
                         time.sleep(3)
-                        doc.add_paragraph("10.check Voice web")
-                        time.sleep(0.5); create_screenshots("Honeywell", 1, doc)
-                        # Nike EPS Dashboard
+                        paragraph = doc.add_paragraph()
+                        paragraph.add_run(f"10.check Voice web\nhttp://tcgiapp1wapp013:9090/VoiceConsole/login.action")
+                        time.sleep(0.5)
+                        create_screenshots("Honeywell", 1, doc)
                         driver.get("https://techops-clcps.nike.com/#/dashboard")
                         time.sleep(1)
-                        nu = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@class='el-input__inner' and @placeholder='用户名 / 手机 / 邮箱']")))
-                        np = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@class='el-input__inner' and @placeholder='请输入密码']")))
-                        nu.send_keys("PS1"); np.send_keys("Pspspsps1")
+                        nike_user = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@class='el-input__inner' and @placeholder='用户名 / 手机 / 邮箱']")))
+                        nike_pass = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@class='el-input__inner' and @placeholder='请输入密码']")))
+                        nike_user.send_keys("PS1")
+                        nike_pass.send_keys("Pspspsps1")
                         wait.until(EC.element_to_be_clickable((By.XPATH, "//span[text()='登录']/ancestor::button[contains(@class,'el-button--primary')]"))).click()
                         time.sleep(3)
-                        doc.add_paragraph("11.check EPS server")
-                        time.sleep(0.5); create_screenshots("dashboard", 1, doc)
-                        x, y = 900, 700; pyautogui.moveTo(x, y, duration=3); time.sleep(0.5); pyautogui.click(); time.sleep(2)
+                        paragraph = doc.add_paragraph()
+                        paragraph.add_run(f"11.check EPS server(first lic server TCGWMSP1WEPS003)\n远程用户/密码\nEe*GC7qz\n\nTCGWMSP1WEPS003\n\n12.https://techops-clcps.nike.com/#/dashboard")
+                        time.sleep(0.5)
+                        create_screenshots("dashboard", 1, doc)
+                        x, y = 900, 700
+                        pyautogui.moveTo(x, y, duration=3)
+                        time.sleep(0.5)
+                        pyautogui.click()
+                        time.sleep(2)
+                        time.sleep(0.5)
                         create_screenshots("dashboard", 2, doc)
                         driver.close()
-                    except Exception as ex:
-                        wb_log(f"网页截图跳过: {ex}", C["warning"])
+                    except Exception:
+                        wb_log("网页截图跳过", C["warning"])
 
                     # ========== Log file ==========
                     try:
                         path = r"\\tcpsappd1ap01\deploy\backend\log-app.log"
                         os.startfile(path)
-                        time.sleep(5); pyautogui.hotkey("ctrl","end"); time.sleep(3)
-                        doc.add_paragraph("13.log文件检查")
-                        time.sleep(0.5); create_screenshots("log", 1, doc)
-                        pyautogui.hotkey("ctrl","W")
-                    except Exception as ex:
-                        wb_log(f"log截图跳过: {ex}", C["warning"])
+                        time.sleep(5)
+                        pyautogui.hotkey('ctrl', 'end')
+                        time.sleep(3)
+                        paragraph = doc.add_paragraph()
+                        paragraph.add_run(f"13.\\tcpsappd1ap01\deploy\ backend\log-app.log\n查看这个log文件内容是否是最近5分钟之内更新的")
+                        time.sleep(0.5)
+                        create_screenshots("log", 1, doc)
+                        pyautogui.hotkey('ctrl', 'W')
+                    except Exception:
+                        wb_log("log文件截图跳过", C["warning"])
 
                     doc.save(word_path)
                     shutil.rmtree("pictures", ignore_errors=True)
