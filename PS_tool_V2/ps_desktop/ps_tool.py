@@ -181,30 +181,26 @@ class App:
 
             def make_stat_table(hd, rs, ec=False):
                 tc = C["error"] if ec else C["text"]
-                # 顶部：字段名行
                 col_count = len(hd)
                 col_width = max(120, 600 // col_count)
+                # 字段名行 - 每个字段靠左
                 header_row = ft.Row(
-                    [ft.Container(
-                        ft.Text(h, size=11, weight=ft.FontWeight.BOLD, color=C["text_muted"],
-                                text_align=ft.TextAlign.CENTER),
-                        width=col_width, padding=5)
+                    [ft.Container(ft.Text(h, size=11, weight=ft.FontWeight.BOLD, color=C["text_muted"]),
+                        width=col_width, padding=ft.padding.only(right=8))
                      for h in hd],
-                    spacing=2, alignment=ft.MainAxisAlignment.CENTER
+                    spacing=0
                 )
-                # 每一行数据
+                # 数据行 - 每个值靠左
                 data_rows = []
                 for r in rs:
                     row = ft.Row(
-                        [ft.Container(
-                            ft.Text(str(r.get(h, "")), size=12, color=tc, weight=ft.FontWeight.BOLD,
-                                    text_align=ft.TextAlign.CENTER),
-                            width=col_width, padding=5)
+                        [ft.Container(ft.Text(str(r.get(h, "")), size=12, color=tc, weight=ft.FontWeight.BOLD),
+                            width=col_width, padding=ft.padding.only(right=8))
                          for h in hd],
-                        spacing=2, alignment=ft.MainAxisAlignment.CENTER
+                        spacing=0
                     )
                     data_rows.append(row)
-                return ft.Container(ft.Column([header_row] + data_rows, spacing=4), padding=ft.padding.only(left=10, right=10))
+                return ft.Column([header_row] + data_rows, spacing=2)
             for k, icon, title, ec in [("summary",ft.Icons.TABLE_CHART,"STSCODE 汇总",False),
                                         ("gi_status",None,"GI 状态统计",False),
                                         ("errors",ft.Icons.ERROR,"GI 错误",True)]:
