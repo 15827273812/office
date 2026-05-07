@@ -12,21 +12,23 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
+
       - name: Install dependencies
+        shell: cmd
         run: |
           pip install pyinstaller flet pandas pyodbc selenium pyautogui pyperclip python-docx pillow easygui requests xlsxwriter
-          
+
       - name: Build EXE
+        shell: cmd
         run: |
-          cd PS_tool_v2\\ps_desktop
+          cd PS_tool_v2\ps_desktop
           pyinstaller --onefile --windowed --name "PS_Tool" --add-data "core.py;." --add-data "config.json;." PS_tool.py
-          
+
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
@@ -36,4 +38,3 @@ jobs:
           files: PS_tool_v2/ps_desktop/dist/PS_Tool.exe
           generate_release_notes: false
           make_latest: true
-
