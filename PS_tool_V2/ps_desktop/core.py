@@ -242,17 +242,16 @@ def query_export_data(db: DBManager, num_conditions, alpha_conditions):
     
     if alpha_conditions:
         first = alpha_conditions[0]
+        n = len(alpha_conditions)
+        ph = ', '.join(['?'] * n)
+        template_ph = "{', '.join(['?'] * len(alpha_conditions))}"  # SQL 中的模板字面量
         
         if len(first) == 10 and 'data_by_sku' in sqls:
-            sql = sqls['data_by_sku']
-            # SQL 内含有模板: {', '.join(['?'] * len(alpha_conditions))}
-            # 用 eval 解析为动态占位符
-            n = len(alpha_conditions)
-            sql = sql.replace("{', '.join(['?'] * len(alpha_conditions))}", ', '.join(['?'] * n))
+            sql = sqls['data_by_sku'].replace(template_ph, ph)
         elif len(first) == 9 and 'trailer_info_by_csn' in sqls:
-            sql = sqls['trailer_info_by_csn']
+            sql = sqls['trailer_info_by_csn'].replace(template_ph, ph)
         elif 'inventory_by_sku' in sqls:
-            sql = sqls['inventory_by_sku']
+            sql = sqls['inventory_by_sku'].replace(template_ph, ph)
         else:
             return results
         
