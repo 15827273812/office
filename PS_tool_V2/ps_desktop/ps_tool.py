@@ -416,8 +416,8 @@ class App:
                 if not data.get("fields") or not data.get("rows"):
                     rv.controls.append(ft.Text("无数据", color=C["text_muted"]))
                 else:
-                    rv.controls.append(ft.Text(f"{data.get('query_type','')} | {data.get('total',0)} 条",size=13,color=C["text"]))
-                    rv.controls.append(self._tbl_widget(data['fields'], data['rows']))
+                    self._stat_card(rv, data.get('fields',[]), data.get('rows',[]),
+                        data.get('query_type',''), data.get('total',0))
             self.page.update()
 
         def q(e):
@@ -461,9 +461,8 @@ class App:
             if not data.get("rows"):
                 rv.controls.append(ft.Text("无数据", color=C["text_muted"]))
             else:
-                rv.controls.append(ft.Row([ft.Icon(ft.Icons.DATE_RANGE,color=C["accent"]),
-                    ft.Text(f"{data.get('file_prefix','')} | {data.get('total',0)} 条")]))
-                rv.controls.append(self._tbl_widget(data['fields'], data['rows']))
+                self._stat_card(rv, data.get('fields',[]), data.get('rows',[]),
+                    data.get('file_prefix',''), data.get('total',0))
             self.page.update()
 
         def q(e):
