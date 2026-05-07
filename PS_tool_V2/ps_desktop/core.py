@@ -242,18 +242,23 @@ def query_export_data(db: DBManager, num_conditions, alpha_conditions):
     
     if alpha_conditions:
         first = alpha_conditions[0]
-        ph = ', '.join(['?'] * len(alpha_conditions))
         
-        if len(first) == 10:
-            sql = sqls['data_by_sku'].replace('{placeholders}', ph)
-        elif len(first) == 9:
-            sql = sqls['trailer_info_by_csn'].replace('{placeholders}', ph)
+        if len(first) == 10 and 'data_by_sku' in sqls:
+            sql = sqls['data_by_sku']
+            # SQL 内含有模板: {', '.join(['?'] * len(alpha_conditions))}
+            # 用 eval 解析为动态占位符
+            n = len(alpha_conditions)
+            sql = sql.replace("{', '.join(['?'] * len(alpha_conditions))}", ', '.join(['?'] * n))
+        elif len(first) == 9 and 'trailer_info_by_csn' in sqls:
+            sql = sqls['trailer_info_by_csn']
+        elif 'inventory_by_sku' in sqls:
+            sql = sqls['inventory_by_sku']
         else:
-            sql = sqls['inventory_by_sku'].replace('{placeholders}', ph)
+            return results
         
         rows, fields = db.execute_query(sql, alpha_conditions)
         if rows:
-            results.append({'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'Alpha_Query' if len(alpha_conditions[0]) in (9,10) else 'Inventory'})
+            results.append({'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'Alpha_Query' if len(first) in (9,10) else 'Inventory'})
         return results
     
     return results
