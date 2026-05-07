@@ -129,21 +129,26 @@ class App:
             return self.err("请先查询数据")
         def work():
             from core import export_to_excel, export_inventory_to_excel
-            if isinstance(data, dict) and data.get("type") == "inventory_export":
-                tmp = export_inventory_to_excel(data.get("data", []), "Inventory")
-            else:
-                rows, fields = data.get("rows", []), data.get("fields", [])
-                if not rows: raise Exception("无数据")
-                tmp = export_to_excel(rows, fields, key)
-            # 使用 file_prefix 作为文件名，不加时间戳，直接覆盖
-            prefix = data.get("file_prefix", key)
-            ds = os.path.join(os.path.expanduser("~"), "Desktop")
-            os.makedirs(ds, exist_ok=True)
-            dst = os.path.join(ds, f"{prefix}.xlsx")
-            shutil.copy2(tmp, dst)
-            return dst
+            items = data if isinstance(data, list) else [data]
+            saved = []
+            for item in items:
+                if isinstance(item, dict) and item.get("type") == "inventory_export":
+                    tmp = export_inventory_to_excel(item.get("data", []), "Inventory")
+                else:
+                    rows, fields = item.get("rows", []), item.get("fields", [])
+                    if not rows: continue
+                    tmp = export_to_excel(rows, fields, item.get('file_prefix', key))
+                prefix = item.get("file_prefix", key)
+                ds = os.path.join(os.path.expanduser("~"), "Desktop")
+                os.makedirs(ds, exist_ok=True)
+                dst = os.path.join(ds, f"{prefix}.xlsx")
+                shutil.copy2(tmp, dst)
+                saved.append(os.path.basename(dst))
+            if not saved: raise Exception("无数据")
+            return saved
         def done(p):
-            self.toast(f"已保存: {os.path.basename(p)}")
+            fnames = ', '.join(p)
+            self.toast(f"已保存: {fnames}")
         self._run(work, done)
 
     # ==================== GI 状态 Tab ====================
@@ -241,14 +246,37 @@ class App:
             hint_text="物料 / SKU / Access Number", border_color=C["border"], color=C["text"])
         rv = ft.Column(spacing=4, visible=False, scroll=ft.ScrollMode.AUTO)
 
+        def make_card_table(hd, rs, title):
+                col_count = len(hd)
+                col_width = max(120, 600 // col_count)
+                header_row = ft.Row(
+                    [ft.Container(ft.Text(h, size=11, weight=ft.FontWeight.BOLD, color=C["text_muted"],
+                            text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
+                     for h in hd],
+                    spacing=2, alignment=ft.MainAxisAlignment.CENTER
+                )
+                data_rows = []
+                for r in rs:
+                    row = ft.Row(
+                        [ft.Container(ft.Text(str(r.get(h, "")), size=12, color=C["text"], weight=ft.FontWeight.BOLD,
+                                text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
+                         for h in hd],
+                        spacing=2, alignment=ft.MainAxisAlignment.CENTER
+                    )
+                    data_rows.append(row)
+                return self._card(None, title, ft.Column([header_row] + data_rows, spacing=4))
+
         def show(data):
             self._cache['export'] = data; rv.controls.clear(); rv.visible = True
-            if not data.get("rows"):
+            # data 可能是 list（多结果）或 dict（单结果，向后兼容）
+            items = data if isinstance(data, list) else [data]
+            has_data = False
+            for item in items:
+                if item.get("rows"):
+                    has_data = True
+                    rv.controls.append(make_card_table(item['fields'], item['rows'], item['file_prefix']))
+            if not has_data:
                 rv.controls.append(ft.Text("无数据", color=C["text_muted"]))
-            else:
-                rv.controls.append(ft.Row([ft.Icon(ft.Icons.INSERT_CHART,color=C["success"]),
-                    ft.Text(f"{data['file_prefix']} | {len(data['rows'])} 行",size=13,color=C["text"])]))
-                rv.controls.append(self._tbl_widget(data['fields'], data['rows']))
             self.page.update()
 
         def qn(e):
