@@ -58,6 +58,20 @@ HC = CONFIG['health_check']
 
 con_string = CON_STRING  # 向后兼容
 
+# ============================
+# 辅助函数
+# ============================
+
+def clean_dataframe(df):
+    """清理DataFrame：去空格、去None"""
+    df = df.copy()
+    df = clean_dataframe(df)
+
+    file_path = save_df_to_desktop(df, file_prefix)
+
+    return file_path
+
+
 
 
 
@@ -838,7 +852,7 @@ def open_and_screenshot():
           pyautogui.hotkey('ctrl','end')
           time.sleep(3)
           paragraph = doc.add_paragraph()
-          paragraph.add_run(f"13.\\tcpsappd1ap01\deploy\ backend\log-app.log\n查看这个log文件内容是否是最近5分钟之内更新的")
+          paragraph.add_run(f"13.\\\\tcpsappd1ap01\\\\deploy\\backend\\log-app.log\n查看这个log文件内容是否是最近5分钟之内更新的")
           time.sleep(0.5)
           create_screenshots("log",1,doc)
           time.sleep(3)
@@ -967,7 +981,7 @@ class ExcelDeleteAutomation:
                 if indicator in body_text:
                     return True
             return False
-        except:
+        except Exception:
             return False
     
     def find_and_paste_text(self, text, input_selector="input[type='text']"):
@@ -991,14 +1005,14 @@ class ExcelDeleteAutomation:
                     input_element = self.driver.find_element(By.CSS_SELECTOR, selector)
                     if input_element.is_displayed():
                         break
-                except:
+                except Exception:
                     continue
             
             if not input_element:
                 # 尝试查找第一个输入框
                 try:
                     input_element = self.driver.find_element(By.TAG_NAME, "input")
-                except:
+                except Exception:
                     return False
             
             # 快速输入（使用直接输入而不是复制粘贴）
@@ -1030,7 +1044,7 @@ class ExcelDeleteAutomation:
                         element.click()
                         time.sleep(0.5)  # 减少等待时间
                         return True
-                except:
+                except Exception:
                     continue
             return False
         except Exception as e:
@@ -1065,7 +1079,7 @@ class ExcelDeleteAutomation:
                             delete_found = True
                             time.sleep(0.3)  # 短暂等待弹窗
                             break
-                    except:
+                    except Exception:
                         continue
                 
                 if not delete_found:
@@ -1087,7 +1101,7 @@ class ExcelDeleteAutomation:
                             confirm_btn.click()
                             time.sleep(0.5)  # 减少等待时间
                             return True
-                    except:
+                    except Exception:
                         continue
                 
                 # 如果没找到确认按钮，尝试按回车
@@ -1097,7 +1111,7 @@ class ExcelDeleteAutomation:
                     actions.send_keys(Keys.ENTER).perform()
                     time.sleep(0.5)
                     return True
-                except:
+                except Exception:
                     pass
                 
                 return False
@@ -1117,7 +1131,7 @@ class ExcelDeleteAutomation:
                 lambda driver: self.driver.execute_script("return document.readyState") == "complete"
             )
             time.sleep(0.5)  # 额外短暂等待
-        except:
+        except Exception:
             time.sleep(timeout)  # 如果智能等待失败，使用固定等待
     
     def execute_automation(self, start_url):
@@ -1336,7 +1350,7 @@ class ExcelADDAutomation:
             try:
                 select.select_by_visible_text("V645_CN_20150624")
                 return True
-            except:
+            except Exception:
                 pass            
         except Exception as e:
             message = f"  ✗ 选择任务包失败: {e}\n"
@@ -1369,7 +1383,7 @@ class ExcelADDAutomation:
                 auto_checkbox = self.driver.find_element(By.ID, "generateId")
                 if not auto_checkbox.is_selected():
                     auto_checkbox.click()
-            except:
+            except Exception:
                 message = "  ⓘ 勾选复选框操作失败\n"
                 log.insert("insert", message)
             
@@ -1426,7 +1440,7 @@ class ExcelADDAutomation:
                                 smallest_group_checkbox = checkbox
                                 smallest_size = group_size
                                 selected_group_name = group_name
-                except:
+                except Exception:
                     continue
             
             if smallest_group_checkbox:
@@ -1468,7 +1482,7 @@ class ExcelADDAutomation:
                 try:
                     save_btn = self.wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
                     break
-                except:
+                except Exception:
                     continue
             
             if not save_btn:
@@ -1518,7 +1532,7 @@ class ExcelADDAutomation:
                     log.insert("insert", message)
                     return True
             return False
-        except:
+        except Exception:
             return False
     
     def check_successful_save(self):
@@ -1531,7 +1545,7 @@ class ExcelADDAutomation:
                 message = "  ✓ 成功保存并返回创建页面\n"
                 log.insert("insert", message)
             return is_empty
-        except:
+        except Exception:
             # 如果找不到姓名字段，可能保存成功但页面跳转
             try:
                 # 检查当前URL是否还在创建页面
@@ -1539,7 +1553,7 @@ class ExcelADDAutomation:
                     message = "  ✓ 保存成功，页面已跳转\n"
                     log.insert("insert", message)
                     return True
-            except:
+            except Exception:
                 pass
             return False
     
@@ -1602,7 +1616,7 @@ class ExcelADDAutomation:
         finally:
             try:
                 self.driver.quit()
-            except:
+            except Exception:
                 pass
 
 def Add_Voice_user():
@@ -2075,18 +2089,10 @@ def export_large_data(data, fields, can):
         df = process_data_with_sql(df)
         
         # 数据清洗
-        for col in df.select_dtypes(include='object').columns:
-            if df[col].dtype == 'O':
-                df[col] = df[col].astype(str).str.strip().str.replace(r'\s+', '', regex=True)
-                df[col] = df[col].astype(str).str.replace('None', '', regex=True)
-        
-        # 获取桌面路径
-        desktop_path = os.path.join(os.path.expanduser("~"), 'Desktop')
-        file_name = f'data.xlsx'
-        file_path = os.path.join(desktop_path, file_name)
-        
-        # 写入Excel
-        df.to_excel(file_path, index=False)
+        df = clean_dataframe(df)
+
+        file_path = save_df_to_desktop(df, file_prefix)
+
         
         progress_window.destroy()
         tk.messagebox.showinfo("导出成功", 
@@ -2475,17 +2481,12 @@ def export_data():
                     # 创建DataFrame
                     df = pd.DataFrame([list(row) for row in data], columns=fields)
                     # 去除所有字符串列的前后空格和内部空格
-                    for col in df.select_dtypes(include='object').columns:
-                        if df[col].dtype == 'O':  # 'O' 表示 object 类型，即字符串或混合类型
-                            df[col] = df[col].astype(str).str.strip().str.replace(r'\s+', '', regex=True)
-                            df[col] = df[col].astype(str).str.replace('None', '', regex=True)
+                    df = clean_dataframe(df)
+
                     df = process_data_with_sql(df)
 
-                    # 获取桌面路径
-                    desktop_path = os.path.join(os.path.expanduser("~"), 'Desktop')
-                    file_name = f'{file_prefix}.xlsx'
-                    file_path = os.path.join(desktop_path, file_name)
-                    df.to_excel(file_path, index=False)
+                    file_path = save_df_to_desktop(df, file_prefix)
+
                     log_message(log_text_shipment,'文件已保存至桌面 !')
                 
                 SQL = SQL_DATA['export_data']['fw_shipping']
@@ -2505,17 +2506,12 @@ def export_data():
                     # 创建DataFrame
                     df = pd.DataFrame([list(row) for row in data], columns=fields)
                     # 去除所有字符串列的前后空格和内部空格
-                    for col in df.select_dtypes(include='object').columns:
-                        if df[col].dtype == 'O':  # 'O' 表示 object 类型，即字符串或混合类型
-                            df[col] = df[col].astype(str).str.strip().str.replace(r'\s+', '', regex=True)
-                            df[col] = df[col].astype(str).str.replace('None', '', regex=True)
+                    df = clean_dataframe(df)
+
                     df = process_data_with_sql(df)
 
-                    # 获取桌面路径
-                    desktop_path = os.path.join(os.path.expanduser("~"), 'Desktop')
-                    file_name = f'{file_prefix}.xlsx'
-                    file_path = os.path.join(desktop_path, file_name)
-                    df.to_excel(file_path, index=False)
+                    file_path = save_df_to_desktop(df, file_prefix)
+
                     log_message(log_text_shipment,'文件已保存至桌面 !')
                 
                 SQL = SQL_DATA['export_data']['replenishment']
@@ -2535,17 +2531,12 @@ def export_data():
                     # 创建DataFrame
                     df = pd.DataFrame([list(row) for row in data], columns=fields)
                     # 去除所有字符串列的前后空格和内部空格
-                    for col in df.select_dtypes(include='object').columns:
-                        if df[col].dtype == 'O':  # 'O' 表示 object 类型，即字符串或混合类型
-                            df[col] = df[col].astype(str).str.strip().str.replace(r'\s+', '', regex=True)
-                            df[col] = df[col].astype(str).str.replace('None', '', regex=True)
+                    df = clean_dataframe(df)
+
                     df = process_data_with_sql(df)
 
-                    # 获取桌面路径
-                    desktop_path = os.path.join(os.path.expanduser("~"), 'Desktop')
-                    file_name = f'{file_prefix}.xlsx'
-                    file_path = os.path.join(desktop_path, file_name)
-                    df.to_excel(file_path, index=False)
+                    file_path = save_df_to_desktop(df, file_prefix)
+
                     log_message(log_text_shipment,'文件已保存至桌面 !')
             #     SQL_Picking = f'''
             #         SELECT PLRUNNBR, PRSTYCDE, PRCOLCDE, INEXTSIZ, ACACTCDE,LOSYSLOC,SUM(BPPIDQTY)QTY
@@ -2684,19 +2675,12 @@ def export_data():
                 # 创建DataFrame
                 df = pd.DataFrame([list(row) for row in data], columns=fields)
                 # 去除所有字符串列的前后空格和内部空格
-                for col in df.select_dtypes(include='object').columns:
-                    if df[col].dtype == 'O':  # 'O' 表示 object 类型，即字符串或混合类型
-                        df[col] = df[col].astype(str).str.strip().str.replace(r'\s+', '', regex=True)
-                        df[col] = df[col].astype(str).str.replace('None', '', regex=True)
+                df = clean_dataframe(df)
+
                 df = process_data_with_sql(df)
 
-                # 获取桌面路径
-                desktop_path = os.path.join(os.path.expanduser("~"), 'Desktop')
-                file_name = f'{file_prefix}.xlsx'
-                file_path = os.path.join(desktop_path, file_name)
+                file_path = save_df_to_desktop(df, file_prefix)
 
-                # 写入Excel文件
-                df.to_excel(file_path, index=False)
                 log_message(log_text_shipment,'文件已保存至桌面 !')
 
 
@@ -2734,19 +2718,12 @@ def export_data():
             # 创建DataFrame
             df = pd.DataFrame([list(row) for row in data], columns=fields)
             # 去除所有字符串列的前后空格和内部空格
-            for col in df.select_dtypes(include='object').columns:
-                if df[col].dtype == 'O':  # 'O' 表示 object 类型，即字符串或混合类型
-                    df[col] = df[col].astype(str).str.strip().str.replace(r'\s+', '', regex=True)
-                    df[col] = df[col].astype(str).str.replace('None', '', regex=True)
+            df = clean_dataframe(df)
+
             df = process_data_with_sql(df)
 
-            # 获取桌面路径
-            desktop_path = os.path.join(os.path.expanduser("~"), 'Desktop')
-            file_name = f'{file_prefix}.xlsx'
-            file_path = os.path.join(desktop_path, file_name)
+            file_path = save_df_to_desktop(df, file_prefix)
 
-            # 写入Excel文件
-            df.to_excel(file_path, index=False)
             log_message(log_text_shipment,'文件已保存至桌面 !')
 
             cur.close()
