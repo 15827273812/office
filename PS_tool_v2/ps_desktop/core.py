@@ -170,15 +170,23 @@ def query_gi_status(db: DBManager):
 
 # 数据导出查询
 def query_export_data(db: DBManager, num_conditions, alpha_conditions):
-    """执行数据导出查询，返回结果字典"""
+    """执行数据导出查询，返回结果列表（每个结果对应一个SQL匹配）"""
     sqls = db.sql_data['export_data']
+    results = []
+    
+    def try_sql(sql_key, params, prefix):
+        sql = sqls[sql_key].replace('{placeholders}', ', '.join(['?'] * len(params)))
+        rows, fields = db.execute_query(sql, params)
+        if rows:
+            return {'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': prefix}
+        return None
     
     if num_conditions:
-        placeholders = ', '.join(['?'] * len(num_conditions))
         first = num_conditions[0]
+        placeholders = ', '.join(['?'] * len(num_conditions))
         
         if len(first) <= 4:
-            # 短条件 - 依次尝试 3 个SQL
+            # 短条件 - 依次尝试 3 个SQL，每个都有数据则全部返回
             for sql_key, prefix in [
                 ('ap_shipping', 'AP_Shipping'),
                 ('fw_shipping', 'FW_Shipping'),
@@ -187,34 +195,25 @@ def query_export_data(db: DBManager, num_conditions, alpha_conditions):
                 sql = sqls[sql_key].replace('{placeholders}', placeholders)
                 rows, fields = db.execute_query(sql, num_conditions)
                 if rows:
-                    return {'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': prefix}
-            return {'rows': [], 'fields': [], 'file_prefix': 'data'}
+                    results.append({'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': prefix})
+            return results
         
         # 长条件
         ten_digit = [c for c in num_conditions if len(c) == 10]
         six_digit = [c for c in num_conditions if len(c) == 6]
         
         if ten_digit and not six_digit:
-            ph = ', '.join(['?'] * len(ten_digit))
-            sql = sqls['shipment_info'].replace('{placeholders}', ph)
-            rows, fields = db.execute_query(sql, ten_digit)
-            if rows:
-                return {'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'Shipment_info'}
-            sql = sqls['plan_info_by_por'].replace('{placeholders}', ph)
-            rows, fields = db.execute_query(sql, ten_digit)
-            if rows:
-                return {'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'plan_info'}
-            sql = sqls['delay_info'].replace('{placeholders}', ph)
-            rows, fields = db.execute_query(sql, ten_digit)
-            if rows:
-                return {'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'Delay_info'}
+            for key, pref in [('shipment_info','Shipment_info'), ('plan_info_by_por','plan_info'), ('delay_info','Delay_info')]:
+                r = try_sql(key, ten_digit, pref)
+                if r:
+                    results.append(r)
+                    break  # 找到第一个有数据的就返回
+            return results
             
         if six_digit and not ten_digit:
-            ph = ', '.join(['?'] * len(six_digit))
-            sql = sqls['plan_info_by_ibrc'].replace('{placeholders}', ph)
-            rows, fields = db.execute_query(sql, six_digit)
-            if rows:
-                return {'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'plan_info'}
+            r = try_sql('plan_info_by_ibrc', six_digit, 'plan_info')
+            if r: results.append(r)
+            return results
             
         if six_digit and ten_digit:
             ph6 = ', '.join(['?'] * len(six_digit))
@@ -222,39 +221,46 @@ def query_export_data(db: DBManager, num_conditions, alpha_conditions):
             sql = sqls['plan_info_by_both'].replace('{placeholders_10}', ph10).replace('{placeholders_6}', ph6)
             rows, fields = db.execute_query(sql, ten_digit + six_digit)
             if rows:
-                return {'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'plan_info'}
+                results.append({'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'plan_info'})
+            return results
         
-        # 按长度分类
         if len(first) == 8:
             sql = sqls['packlist_info'].replace('{placeholders}', placeholders)
             rows, fields = db.execute_query(sql, num_conditions)
-            return {'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'Packlist_info'}
+            if rows:
+                results.append({'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'Packlist_info'})
+            return results
         
         if len(first) == 20:
-            sql = sqls['fs_info'].replace('{placeholders}', placeholders)
-            rows, fields = db.execute_query(sql, num_conditions)
-            if rows:
-                return {'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'FS_info'}
-            sql = sqls['trailer_info'].replace('{placeholders}', placeholders)
-            rows, fields = db.execute_query(sql, num_conditions)
-            if rows:
-                return {'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'trailer_info'}
+            for key, pref in [('fs_info','FS_info'), ('trailer_info','trailer_info')]:
+                sql = sqls[key].replace('{placeholders}', placeholders)
+                rows, fields = db.execute_query(sql, num_conditions)
+                if rows:
+                    results.append({'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': pref})
+                    break
+            return results
     
     if alpha_conditions:
         first = alpha_conditions[0]
-        placeholders = ', '.join(['?'] * len(alpha_conditions))
+        n = len(alpha_conditions)
+        ph = ', '.join(['?'] * n)
+        template_ph = "{', '.join(['?'] * len(alpha_conditions))}"  # SQL 中的模板字面量
         
-        if len(first) == 10:
-            sql = sqls['data_by_sku'].replace('{placeholders}', placeholders)
-        elif len(first) == 9:
-            sql = sqls['trailer_info_by_csn'].replace('{placeholders}', placeholders)
+        if len(first) == 10 and 'data_by_sku' in sqls:
+            sql = sqls['data_by_sku'].replace(template_ph, ph)
+        elif len(first) == 9 and 'trailer_info_by_csn' in sqls:
+            sql = sqls['trailer_info_by_csn'].replace(template_ph, ph)
+        elif 'inventory_by_sku' in sqls:
+            sql = sqls['inventory_by_sku'].replace(template_ph, ph)
         else:
-            sql = sqls['inventory_by_sku'].replace('{placeholders}', placeholders)
+            return results
         
         rows, fields = db.execute_query(sql, alpha_conditions)
-        return {'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'Alpha_Query'}
+        if rows:
+            results.append({'rows': db.rows_to_dicts(rows, fields), 'fields': fields, 'file_prefix': 'Alpha_Query' if len(first) in (9,10) else 'Inventory'})
+        return results
     
-    return {'rows': [], 'fields': [], 'file_prefix': 'data'}
+    return results
 
 # 标签历史查询
 def query_label_history(db: DBManager, carton_numbers, query_type):
@@ -334,8 +340,10 @@ def query_date_range(db: DBManager, query_type, start_date=None, end_date=None):
     conn = db.get_connection()
     cur = conn.cursor()
     if start_date and end_date:
-        cur.execute(sql, (start_date.isoformat() if hasattr(start_date, 'isoformat') else start_date,
-                          end_date.isoformat() if hasattr(end_date, 'isoformat') else end_date))
+        # 兼容字符串和 datetime 对象
+        s = start_date.strftime("%Y-%m-%d") if hasattr(start_date, 'strftime') else str(start_date)
+        e = end_date.strftime("%Y-%m-%d") if hasattr(end_date, 'strftime') else str(end_date)
+        cur.execute(sql, (s, e))
     else:
         cur.execute(sql)
     fields = [f[0] for f in cur.description]
