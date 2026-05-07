@@ -181,22 +181,20 @@ class App:
             def tb(hd, rs, ec=False):
                 tc = C["error"] if ec else C["accent"]
                 return ft.DataTable(
-                    width=700,
                     column_spacing=20,
-                    columns=[ft.DataColumn(ft.Text(h,size=11,weight=ft.FontWeight.BOLD,color=tc,text_align=ft.TextAlign.CENTER)) for h in hd],
-                    rows=[ft.DataRow([ft.DataCell(ft.Text(str(r.get(h,"")),size=11,color=C["text"],text_align=ft.TextAlign.CENTER)) for h in hd]) for r in rs],
+                    columns=[ft.DataColumn(ft.Text(h,size=11,weight=ft.FontWeight.BOLD,color=tc), numeric=True) for h in hd],
+                    rows=[ft.DataRow([ft.DataCell(ft.Text(str(r.get(h,"")),size=11,color=C["text"]), ft.ResponsiveRow([])) for h in hd]) for r in rs],
                     bgcolor=C["bg_card"],border=ft.border.all(1,C["border"]),heading_row_color=C["bg_dark"],
-                    heading_row_height=30,data_row_max_height=26)
+                    heading_row_height=30,data_row_max_height=26,
+                    horizontal_margin=8, heading_text_style=ft.TextStyle(font_family="monospace"),
+                )
             for k, icon, title, ec in [("summary",ft.Icons.TABLE_CHART,"STSCODE 汇总",False),
                                         ("gi_status",None,"GI 状态统计",False),
                                         ("errors",ft.Icons.ERROR,"GI 错误",True)]:
                 rs = data.get(k)
                 if rs:
                     h = list(rs[0].keys())
-                    rv.controls.append(ft.Container(
-                        self._card(icon, title, tb(h, rs, ec)),
-                        width=760, padding=4, border_radius=8,
-                    ))
+                    rv.controls.append(self._card(icon, title, tb(h, rs, ec)))
 
         def refresh(e=None):
             rv.visible = False; rv.controls.clear()
