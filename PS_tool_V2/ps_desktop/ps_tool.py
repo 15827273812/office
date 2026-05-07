@@ -207,12 +207,15 @@ class App:
             self._run(work, done)
 
         refresh_btn.on_click = refresh
-        return ft.Column([ft.Container(ft.Column([
-            ft.Row([ft.Text("GI 状态监控",size=20,weight=ft.FontWeight.BOLD,color=C["text"]),
-                    ft.Container(expand=True),refresh_btn]),
+        return ft.Column([
+            ft.Container(
+                ft.Row([ft.Text("GI 状态监控",size=20,weight=ft.FontWeight.BOLD,color=C["text"]),
+                        ft.Container(expand=True),refresh_btn]),
+                padding=ft.padding.only(left=24, right=24, top=24),
+            ),
             ft.Divider(color=C["border"]),
-            rv,
-        ], spacing=12), padding=24, expand=True)], scroll=ft.ScrollMode.AUTO)
+            ft.Container(rv, expand=True, padding=24),
+        ], spacing=0, expand=True)
     # ==================== 数据导出 Tab ====================
     def _export(self):
         ni = ft.TextField(label="数字条件（每行一个）",multiline=True,min_lines=4,max_lines=8,
@@ -243,7 +246,7 @@ class App:
             rv.visible=False; rv.controls.clear()
             self._run(lambda: query_export_data(self.db, [], c), lambda d: show(d))
 
-        return ft.Column([ft.Container(ft.Column([
+        query_area = ft.Column([
             ft.Text("数据导出",size=20,weight=ft.FontWeight.BOLD,color=C["text"]),
             ft.Divider(color=C["border"]),
             ft.ResponsiveRow([ft.Container(ni,col={"sm":12,"md":6}),ft.Container(ai,col={"sm":12,"md":6})]),
@@ -251,8 +254,13 @@ class App:
                 ft.FilledButton("数字查询",icon=ft.Icons.SEARCH,on_click=qn,style=ft.ButtonStyle(bgcolor=C["accent"])),
                 ft.FilledButton("字母查询",icon=ft.Icons.TEXT_SNIPPET,on_click=qa,style=ft.ButtonStyle(bgcolor=C["success"])),
                 ft.OutlinedButton("导出 Excel",icon=ft.Icons.DOWNLOAD,on_click=lambda e:self._save("export"),style=ft.ButtonStyle(color=C["accent"])),
-            ], spacing=8, wrap=True), rv,
-        ], spacing=12), padding=24, expand=True)], scroll=ft.ScrollMode.AUTO)
+            ], spacing=8, wrap=True),
+        ], spacing=12)
+        return ft.Column([
+            ft.Container(query_area, padding=ft.padding.only(left=24, right=24, top=24)),
+            ft.Divider(color=C["border"]),
+            ft.Container(rv, expand=True, padding=ft.padding.only(left=24, right=24, bottom=24)),
+        ], spacing=0, expand=True)
 
     # ==================== 标签历史 Tab ====================
     def _label(self):
