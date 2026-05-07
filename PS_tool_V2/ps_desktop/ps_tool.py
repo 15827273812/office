@@ -180,24 +180,30 @@ class App:
 
             def make_stat_table(hd, rs, ec=False):
                 tc = C["error"] if ec else C["text"]
-                rows_widgets = []
+                # 顶部：字段名行
+                col_count = len(hd)
+                col_width = max(120, 600 // col_count)
+                header_row = ft.Row(
+                    [ft.Container(
+                        ft.Text(h, size=11, weight=ft.FontWeight.BOLD, color=C["text_muted"],
+                                text_align=ft.TextAlign.CENTER),
+                        width=col_width, padding=5)
+                     for h in hd],
+                    spacing=2, alignment=ft.MainAxisAlignment.CENTER
+                )
+                # 每一行数据
+                data_rows = []
                 for r in rs:
-                    row_items = []
-                    for h in hd:
-                        v = str(r.get(h, ""))
-                        row_items.append(
-                            ft.Row([
-                                ft.Container(ft.Text(h, size=11, color=C["text_muted"], weight=ft.FontWeight.W_500),
-                                             width=140, padding=ft.padding.only(right=8)),
-                                ft.Container(ft.Text(v, size=12, color=tc, weight=ft.FontWeight.BOLD),
-                                             expand=True),
-                            ], spacing=0, alignment=ft.MainAxisAlignment.START)
-                        )
-                    rows_widgets.extend(row_items)
-                    rows_widgets.append(ft.Divider(height=1, color=C["border"]))
-                if rows_widgets:
-                    rows_widgets.pop()  # 去掉最后一个分隔线
-                return ft.Column(rows_widgets, spacing=6)
+                    row = ft.Row(
+                        [ft.Container(
+                            ft.Text(str(r.get(h, "")), size=12, color=tc, weight=ft.FontWeight.BOLD,
+                                    text_align=ft.TextAlign.CENTER),
+                            width=col_width, padding=5)
+                         for h in hd],
+                        spacing=2, alignment=ft.MainAxisAlignment.CENTER
+                    )
+                    data_rows.append(row)
+                return ft.Column([header_row] + data_rows, spacing=4)
             for k, icon, title, ec in [("summary",ft.Icons.TABLE_CHART,"STSCODE 汇总",False),
                                         ("gi_status",None,"GI 状态统计",False),
                                         ("errors",ft.Icons.ERROR,"GI 错误",True)]:
