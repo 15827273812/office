@@ -773,11 +773,6 @@ class App:
                         job_start_y = 100
                         job_height = 980
                         sheet_name = job_name.replace(' ', '_')[:31]
-                        if True:  # was should_copy_text check
-                            temp_file_name = copy_page_text()
-                            with open(temp_file_name, 'r', encoding="utf - 8") as temp_file:
-                                temp_file.read()
-                            os.remove(temp_file_name)
                         screenshot = pyautogui.screenshot(region=(0, job_start_y, pyautogui.size().width, job_height))
                         screenshot = screenshot.resize((screenshot.width // 2, screenshot.height // 2), Image.Resampling.LANCZOS)
                         screenshot_path = os.path.join('pictures', f'screenshot_{sheet_name}_{page}.png')
