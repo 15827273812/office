@@ -520,25 +520,11 @@ class App:
         def q(e):
             rv.visible=False; rv.controls.clear()
             _req_id[0] += 1; rid = _req_id[0]
-            # 解析文本字段，支持直接输入或日期选择器
-            s_val = sf.value.strip() if sf.value else ""
-            e_val = ef.value.strip() if ef.value else ""
-            import datetime
-            s_date = None; e_date = None
-            if s_val:
-                try: s_date = datetime.datetime.strptime(s_val, "%Y-%m-%d")
-                except: pass
-            if e_val:
-                try: e_date = datetime.datetime.strptime(e_val, "%Y-%m-%d")
-                except: pass
-            s = s_date if s_date else sp.value
-            e = e_date if e_date else ep.value
-            if not s:
-                # 默认今天
-                s = datetime.datetime.now()
-            if not e:
-                e = s
-            self._run(lambda: query_date_range(self.db, dd.value, s, e), lambda d: show(d, rid))
+            # 直接传字符串，参考初版代码
+            s = (sf.value.strip() if sf.value else "") or ""
+            e = (ef.value.strip() if ef.value else "") or ""
+            query_type = dd.value
+            self._run(lambda: query_date_range(self.db, query_type, s, e), lambda d: show(d, rid))
 
         return ft.Column([ft.Container(ft.Column([
             ft.Text("按日期查询",size=20,weight=ft.FontWeight.BOLD,color=C["text"]),
