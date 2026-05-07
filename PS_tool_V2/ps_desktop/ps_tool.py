@@ -14,6 +14,7 @@ C = {
     "bg": "#1a1a2e", "bg_dark": "#16213e", "bg_card": "#1e293b",
     "accent": "#0ea5e9", "success": "#22c55e", "warning": "#f59e0b",
     "error": "#ef4444", "purple": "#a855f7",
+    "orange": "#f97316",
     "text": "#f1f5f9", "text_muted": "#94a3b8", "border": "#334155",
 }
 
