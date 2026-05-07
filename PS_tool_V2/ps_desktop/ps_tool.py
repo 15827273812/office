@@ -32,7 +32,6 @@ class App:
         self.page.theme_mode = ft.ThemeMode.DARK
         self.page.bgcolor = C["bg"]
         self.page.padding = 0
-        self.page.window_full_screen = True
         self.page.window_width = 1280
         self.page.window_height = 800
         self.loading = ft.ProgressRing(visible=False, width=32, height=32, color=C["accent"])
@@ -413,8 +412,6 @@ class App:
             wb_log("格式化完成 (已添加 ctxprwdta. 前缀)", C["success"])
 
         # === 3. GI Status Check ===
-        def cmd_gi(e):
-            wb_log("GI 状态检查...", C["accent"])
             def work():
                 from core import query_gi_status
                 return query_gi_status(self.db)
@@ -453,9 +450,12 @@ class App:
                     w = WebDriverWait(drv, 10)
                     drv.get("http://tcgiapp1wapp013:9090/VoiceConsole/login.action")
                     drv.maximize_window()
-                    w.until(EC.presence_of_element_located((By.NAME,"j_username"))).send_keys(vc.get('username',''))
-                    w.until(EC.presence_of_element_located((By.NAME,"j_password"))).send_keys(vc.get('password',''))
-                    drv.find_element(By.NAME,"j_password").submit()
+                    # 定位登录表单元素 (原版 pattern)
+                    username = w.until(EC.presence_of_element_located((By.NAME, "j_username")))
+                    password = w.until(EC.presence_of_element_located((By.NAME, "j_password")))
+                    username.send_keys(vc.get("username", ""))
+                    password.send_keys(vc.get("password", ""))
+                    password.submit()
                     time.sleep(1)
                     drv.get("http://tcgiapp1wapp013:9090/VoiceConsole/core/search/result.action")
                     time.sleep(1)
@@ -625,9 +625,11 @@ class App:
                     drv.get("http://tcgiapp1wapp013:9090/VoiceConsole/login.action")
                     drv.maximize_window()
                     w = WebDriverWait(drv, 10)
-                    w.until(EC.presence_of_element_located((By.NAME,"j_username"))).send_keys(vc.get('username',''))
-                    w.until(EC.presence_of_element_located((By.NAME,"j_password"))).send_keys(vc.get('password',''))
-                    drv.find_element(By.NAME,"j_password").submit()
+                    username = w.until(EC.presence_of_element_located((By.NAME, "j_username")))
+                    password = w.until(EC.presence_of_element_located((By.NAME, "j_password")))
+                    username.send_keys(vc.get("username", ""))
+                    password.send_keys(vc.get("password", ""))
+                    password.submit()
                     time.sleep(1)
                     drv.get("http://tcgiapp1wapp013:9090/VoiceConsole/core/operator/list.action")
                     time.sleep(1)
@@ -680,7 +682,6 @@ class App:
         btn_row = ft.Row(spacing=6, wrap=True, controls=[
             ft.FilledButton("清屏", icon=ft.Icons.CLEAR_ALL, on_click=cmd_clear, style=ft.ButtonStyle(bgcolor=C["accent"])),
             ft.OutlinedButton("格式化SQL", icon=ft.Icons.CODE, on_click=cmd_format, style=ft.ButtonStyle(color=C["accent"])),
-            ft.OutlinedButton("GI Check", icon=ft.Icons.CHECK_CIRCLE_OUTLINE, on_click=cmd_gi, style=ft.ButtonStyle(color=C["success"])),
             ft.OutlinedButton("Delete Voice", icon=ft.Icons.PERSON_REMOVE, on_click=cmd_delete, style=ft.ButtonStyle(color=C["error"])),
             ft.OutlinedButton("Health Check", icon=ft.Icons.MEDICAL_SERVICES, on_click=cmd_health, style=ft.ButtonStyle(color=C["purple"])),
             ft.OutlinedButton("Add Voice", icon=ft.Icons.PERSON_ADD, on_click=cmd_add, style=ft.ButtonStyle(color=C["orange"])),
