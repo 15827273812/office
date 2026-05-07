@@ -340,8 +340,10 @@ def query_date_range(db: DBManager, query_type, start_date=None, end_date=None):
     conn = db.get_connection()
     cur = conn.cursor()
     if start_date and end_date:
-        cur.execute(sql, (start_date.isoformat() if hasattr(start_date, 'isoformat') else start_date,
-                          end_date.isoformat() if hasattr(end_date, 'isoformat') else end_date))
+        # 兼容字符串和 datetime 对象
+        s = start_date.strftime("%Y-%m-%d") if hasattr(start_date, 'strftime') else str(start_date)
+        e = end_date.strftime("%Y-%m-%d") if hasattr(end_date, 'strftime') else str(end_date)
+        cur.execute(sql, (s, e))
     else:
         cur.execute(sql)
     fields = [f[0] for f in cur.description]
