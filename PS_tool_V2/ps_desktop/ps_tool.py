@@ -347,23 +347,25 @@ class App:
         itpl = self._cfg.get("service_now", {}).get("incident_templates", {})
         cats = list(itpl.keys()) if itpl else ["Inquiry / Help", "Incident", "Service Request"]
         cd = ft.Dropdown(label="分类", options=[ft.dropdown.Option(t) for t in cats],
-                         value=cats[0] if cats else "Inquiry / Help", border_color=C["border"], color=C["text"], width=300, on_change=on_cat_change)
-        rv = ft.Column(spacing=4, visible=False, scroll=ft.ScrollMode.AUTO)
+                         value=cats[0] if cats else "Inquiry / Help", border_color=C["border"], color=C["text"], width=300)
 
         def on_cat_change(e):
             """选择分类时自动填充标题和描述"""
             sn = self._cfg.get("service_now", {})
-            itpl = sn.get("incident_templates", {}).get(cd.value, {})
-            if itpl.get("short_description"):
-                tf.value = itpl["short_description"]
-            desc_text = itpl.get("detailed_description", "xx")
-            # 将分类模板内容填写入描述框
+            tv = cd.value
+            if not tv: return
+            itmpl = sn.get("incident_templates", {}).get(tv, {})
+            if itmpl.get("short_description"):
+                tf.value = itmpl["short_description"]
             lines = []
-            for k, v in itpl.items():
+            for k, v in itmpl.items():
                 if v and k not in ("access_key",):
                     lines.append(f"{k}: {v}")
             df.value = "\n".join(lines)
             self.page.update()
+
+        cd.on_change = on_cat_change
+        rv = ft.Column(spacing=4, visible=False, scroll=ft.ScrollMode.AUTO)
 
         def sub(e):
             if not tf.value: return self.err("请输入标题")
