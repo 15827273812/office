@@ -1268,7 +1268,7 @@ class App:
                           easygui.msgbox("截图结束！请检查结果！！！")
 
                     should_copy_text = True
-                    current_date = datetime.now().strftime("%m%d")
+                    current_date = dt.now().strftime("%m%d")
                     word_doc_path = f"{current_date}.docx"
                     doc = docx.Document()
 
@@ -1315,7 +1315,7 @@ class App:
                         shutil.rmtree('pictures')
 
                     doc.save(word_doc_path)
-                    shutil.rmtree("pictures")
+                    shutil.rmtree("pictures", ignore_errors=True)
                     easygui.msgbox("截图结束！请检查结果！！！")
                     return {"msg": f"已完成, 报告: {word_doc_path}"}
                 except ImportError as ex:
