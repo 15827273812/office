@@ -6,6 +6,7 @@ import flet as ft
 import os, sys, re, time, json, tempfile, threading, math
 import shutil, subprocess, pathlib
 from datetime import datetime
+import sys; sys.dont_write_bytecode = True
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core import DBManager, get_config
@@ -755,7 +756,6 @@ class App:
                     current_date = datetime.now().strftime("%m%d")
                     word_path = os.path.join(os.path.expanduser("~"), "Desktop", f"{current_date}.docx")
                     doc = docx.Document()
-                    doc.add_paragraph(f"AS400 Health Check Report - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
                     def copy_page_text():
                         pyautogui.hotkey('ctrl', 'a')
