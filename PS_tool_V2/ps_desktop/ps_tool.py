@@ -178,24 +178,33 @@ class App:
                     ft.Text(str(data.get('max_gi_time','N/A')),size=14,weight=ft.FontWeight.BOLD,color=C["text"])]),
             ], spacing=24)))
 
-            def tb(hd, rs, ec=False):
-                tc = C["error"] if ec else C["accent"]
-                return ft.DataTable(
-                    column_spacing=24, horizontal_margin=12,
-                    columns=[ft.DataColumn(ft.Text(h,size=11,weight=ft.FontWeight.BOLD,color=tc)) for h in hd],
-                    rows=[ft.DataRow([ft.DataCell(ft.Text(str(r.get(h,"")),size=11,color=C["text"])) for h in hd]) for r in rs],
-                    bgcolor=C["bg_card"],border=ft.border.all(1,C["border"]),heading_row_color=C["bg_dark"],
-                    heading_row_height=28,data_row_max_height=24)
+            def make_stat_table(hd, rs, ec=False):
+                tc = C["error"] if ec else C["text"]
+                rows_widgets = []
+                for r in rs:
+                    row_items = []
+                    for h in hd:
+                        v = str(r.get(h, ""))
+                        row_items.append(
+                            ft.Row([
+                                ft.Container(ft.Text(h, size=11, color=C["text_muted"], weight=ft.FontWeight.W_500),
+                                             width=140, padding=ft.padding.only(right=8)),
+                                ft.Container(ft.Text(v, size=12, color=tc, weight=ft.FontWeight.BOLD),
+                                             expand=True),
+                            ], spacing=0, alignment=ft.MainAxisAlignment.START)
+                        )
+                    rows_widgets.extend(row_items)
+                    rows_widgets.append(ft.Divider(height=1, color=C["border"]))
+                if rows_widgets:
+                    rows_widgets.pop()  # 去掉最后一个分隔线
+                return ft.Column(rows_widgets, spacing=6)
             for k, icon, title, ec in [("summary",ft.Icons.TABLE_CHART,"STSCODE 汇总",False),
                                         ("gi_status",None,"GI 状态统计",False),
                                         ("errors",ft.Icons.ERROR,"GI 错误",True)]:
                 rs = data.get(k)
                 if rs:
                     h = list(rs[0].keys())
-                    rv.controls.append(ft.Container(
-                        self._card(icon, title, tb(h, rs, ec)),
-                        margin=ft.margin.only(left=20),
-                    ))
+                    rv.controls.append(self._card(icon, title, make_stat_table(h, rs, ec)))
 
         def refresh(e=None):
             rv.visible = False; rv.controls.clear()
