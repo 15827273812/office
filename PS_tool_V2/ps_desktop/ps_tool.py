@@ -260,7 +260,7 @@ class App:
                          value=LH[0], border_color=C["border"], color=C["text"], width=300)
         ci = ft.TextField(label="箱号（每行一个）",multiline=True,min_lines=3,max_lines=6,
                           hint_text="每行一个箱号", border_color=C["border"], color=C["text"])
-        rv = ft.Column(spacing=4, visible=False)
+        rv = ft.Column(spacing=4, visible=False, scroll=ft.ScrollMode.AUTO)
 
         def show(data):
             self._cache['label'] = data; rv.controls.clear(); rv.visible = True
@@ -302,7 +302,7 @@ class App:
                           border_color=C["border"], color=C["text"], width=200)
         ef = ft.TextField(label="结束日期", hint_text="点击选择", read_only=True,
                           border_color=C["border"], color=C["text"], width=200)
-        rv = ft.Column(spacing=4, visible=False)
+        rv = ft.Column(spacing=4, visible=False, scroll=ft.ScrollMode.AUTO)
 
         def ps(e): self.page.open(sp)
         def pe(e): self.page.open(ep)
@@ -343,7 +343,7 @@ class App:
         df = ft.TextField(label="描述", multiline=True, min_lines=6, hint_text="详细描述", border_color=C["border"], color=C["text"])
         cd = ft.Dropdown(label="分类", options=[ft.dropdown.Option(t) for t in ["Inquiry / Help","Incident","Service Request"]],
                          value="Inquiry / Help", border_color=C["border"], color=C["text"], width=300)
-        rv = ft.Column(spacing=4, visible=False)
+        rv = ft.Column(spacing=4, visible=False, scroll=ft.ScrollMode.AUTO)
 
         def sub(e):
             if not tf.value: return self.err("请输入标题")
@@ -411,21 +411,7 @@ class App:
             sql_input.value = result; sql_input.update()
             wb_log("格式化完成 (已添加 ctxprwdta. 前缀)", C["success"])
 
-        # === 3. GI Status Check ===
-            def work():
-                from core import query_gi_status
-                return query_gi_status(self.db)
-            def done(data):
-                d = data.get("gi_done", False)
-                wb_log(f"GI: {'已完成' if d else '未完成'}")
-                wb_log(f"  CMR: {data.get('max_cmr_time','N/A')}  GI: {data.get('max_gi_time','N/A')}")
-                tv = data.get('today_volume', {})
-                wb_log(f"  今日: {tv.get('units',0)}U / {tv.get('cartons',0)}箱 / {tv.get('dns',0)}DN / {tv.get('pls',0)}PL")
-                for r in data.get('summary',[]):
-                    wb_log(f"  STSCODE: {' | '.join(f'{k}={v}' for k,v in r.items())}")
-                for r in data.get('errors',[]):
-                    wb_log(f"  GI错误: {' | '.join(f'{k}={v}' for k,v in r.items())}", C["error"])
-            self._run(work, done)
+
 
         # === 4. Delete Voice User (Selenium) ===
         def cmd_delete(e):
@@ -439,7 +425,7 @@ class App:
                     from selenium.webdriver.support.ui import WebDriverWait
                     from selenium.webdriver.support import expected_conditions as EC
                     from selenium.webdriver.common.keys import Keys
-                    vc = self._cfg.get("Voice_Console", {})
+                    vc = self._cfg.get("voice_console", {})
                     ops = webdriver.ChromeOptions()
                     ops.add_experimental_option("prefs", {"credentials_enable_service":False})
                     ops.add_argument("--disable-blink-features=AutomationControlled")
@@ -478,20 +464,28 @@ class App:
                                 else: continue
                                 break
                             time.sleep(0.3)
-                            for s in ["//*[contains(text(),'删除此操作员')]"]:
+                            delete_found = False
+                            for s in ["//*[contains(text(),'删除此操作员')]","//button[contains(text(),'删除')]","//a[contains(text(),'删除')]"]:
                                 try:
                                     b = drv.find_element(By.XPATH,s)
-                                    if b.is_displayed(): b.click(); break
+                                    if b.is_displayed(): b.click(); delete_found = True; break
                                 except: continue
+                            if not delete_found:
+                                wb_log(f"  [{i+1}/{len(vals)}] {v} -> 无法找到删除按钮", C["error"])
+                                continue
                             time.sleep(0.2)
+                            confirmed = False
                             for s in ["//*[contains(text(),'是，删除操作员')]","//button[contains(text(),'是')]"]:
                                 try:
                                     b = drv.find_element(By.XPATH,s)
-                                    if b.is_displayed(): b.click(); break
+                                    if b.is_displayed(): b.click(); confirmed = True; break
                                 except: continue
                             time.sleep(0.4)
-                            ok += 1
-                            wb_log(f"  [{i+1}/{len(vals)}] {v} -> ok", C["success"])
+                            if confirmed:
+                                ok += 1
+                                wb_log(f"  [{i+1}/{len(vals)}] {v} -> ok", C["success"])
+                            else:
+                                wb_log(f"  [{i+1}/{len(vals)}] {v} -> 无法找到确认删除按钮", C["error"])
                         except Exception as ex:
                             wb_log(f"  [{i+1}/{len(vals)}] {v} -> fail: {ex}", C["error"])
                     drv.quit()
@@ -603,7 +597,7 @@ class App:
                     from selenium.webdriver.common.by import By
                     from selenium.webdriver.support.ui import WebDriverWait, Select
                     from selenium.webdriver.support import expected_conditions as EC
-                    vc = self._cfg.get("Voice_Console", {})
+                    vc = self._cfg.get("voice_console", {})
                     xp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.xlsx")
                     if not os.path.exists(xp):
                         return {"error": f"data.xlsx 不存在（放程序同目录）: {xp}"}
