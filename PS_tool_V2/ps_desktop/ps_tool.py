@@ -116,43 +116,38 @@ class App:
     def _tbl_widget(self, fields, rows, h=300):
         if not fields or not rows:
             return ft.Container(ft.Text("无数据", color=C["text_muted"]), padding=10)
-        rows_all = rows
-        total = len(rows_all)
+        total = len(rows)
         page = [0]
+        PAGE_SZ = self.PAGE_SIZE
+        pager = ft.Column(spacing=2)
 
-        def render_page():
+        def rebuild():
+            start = page[0] * PAGE_SZ
+            end = min(start + PAGE_SZ, total)
+            pn = max(1, (total + PAGE_SZ - 1) // PAGE_SZ)
             cols = [ft.DataColumn(ft.Text(c[:15], size=10, weight=ft.FontWeight.BOLD, color=C["accent"])) for c in fields]
-            start = page[0] * self.PAGE_SIZE
-            end = min(start + self.PAGE_SIZE, total)
-            dr = [ft.DataRow([ft.DataCell(ft.Text(str(r.get(f,""))[:40], size=10, color=C["text"])) for f in fields]) for r in rows_all[start:end]]
-            return cols, dr, start, end
-
-        # 分页按钮
-        pi = ft.Text(f"第1页/共{max(1,(total+self.PAGE_SIZE-1)//self.PAGE_SIZE)}页  共{total}条", size=11, color=C["text_muted"])
-        btn_prev = ft.IconButton(ft.Icons.NAVIGATE_BEFORE, icon_size=18, tooltip="上一页",
-            on_click=lambda e: go(-1), disabled=page[0]==0)
-        btn_next = ft.IconButton(ft.Icons.NAVIGATE_NEXT, icon_size=18, tooltip="下一页",
-            on_click=lambda e: go(1), disabled=(page[0]+1)*self.PAGE_SIZE >= total)
-        dt = ft.DataTable(bgcolor=C["bg_card"], border=ft.border.all(1,C["border"]),
-            heading_row_color=C["bg_dark"], heading_row_height=28, data_row_max_height=22)
+            dr = [ft.DataRow([ft.DataCell(ft.Text(str(r.get(f,""))[:40], size=10, color=C["text"])) for f in fields]) for r in rows[start:end]]
+            dt = ft.DataTable(columns=cols, rows=dr, bgcolor=C["bg_card"], border=ft.border.all(1,C["border"]),
+                heading_row_color=C["bg_dark"], heading_row_height=28, data_row_max_height=22)
+            pager.controls = [
+                ft.Row([
+                    ft.Text(f"第{page[0]+1}页/共{pn}页  {start+1}-{end}条/共{total}条", size=11, color=C["text_muted"]),
+                    ft.Container(expand=True),
+                    ft.IconButton(ft.Icons.NAVIGATE_BEFORE, icon_size=16, tooltip="上一页",
+                        on_click=lambda e: go(-1), disabled=(page[0]==0)),
+                    ft.IconButton(ft.Icons.NAVIGATE_NEXT, icon_size=16, tooltip="下一页",
+                        on_click=lambda e: go(1), disabled=(end>=total)),
+                ], spacing=4),
+                ft.Container(dt, height=h, expand=True),
+            ]
+            pager.update()
 
         def go(delta):
-            if delta < 0 and page[0] == 0: return
-            if delta > 0 and (page[0]+1)*self.PAGE_SIZE >= total: return
             page[0] += delta
-            cols, dr, start, end = render_page()
-            dt.columns = cols; dt.rows = dr
-            pi.value = f"第{page[0]+1}页/共{max(1,(total+self.PAGE_SIZE-1)//self.PAGE_SIZE)}页  {start+1}-{end}条/共{total}条"
-            btn_prev.disabled = page[0] == 0
-            btn_next.disabled = (page[0]+1)*self.PAGE_SIZE >= total
-            dt.update(); pi.update(); btn_prev.update(); btn_next.update()
+            rebuild()
 
-        cols, dr, start, end = render_page()
-        dt.columns = cols; dt.rows = dr
-        return ft.Column([
-            ft.Row([pi, ft.Container(expand=True), btn_prev, btn_next], spacing=4),
-            ft.Container(dt, height=h, expand=True),
-        ], spacing=2)
+        rebuild()
+        return pager
 
     def _save(self, key):
         data = self._cache.get(key)
@@ -222,54 +217,45 @@ class App:
                 total = len(rs)
                 page = [0]
                 PAGE_SZ = 10
-                # 字段名列
-                header_row = ft.Row(
-                    [ft.Container(ft.Text(h, size=11, weight=ft.FontWeight.BOLD, color=C["text_muted"],
-                            text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
-                     for h in hd],
-                    spacing=2, alignment=ft.MainAxisAlignment.CENTER
-                )
-                # 分页信息
-                pi = ft.Text(f"第1页/共{max(1,(total+PAGE_SZ-1)//PAGE_SZ)}页  共{total}条", size=11, color=C["text_muted"])
-                btn_prev = ft.IconButton(ft.Icons.NAVIGATE_BEFORE, icon_size=16, tooltip="上一页", disabled=True)
-                btn_next = ft.IconButton(ft.Icons.NAVIGATE_NEXT, icon_size=16, tooltip="下一页",
-                    disabled=(PAGE_SZ >= total))
-                body = ft.Column([header_row], spacing=4)
+                # 分页容器 - 每次翻页替换全部内容
+                pager = ft.Column(spacing=2)
+                pi = ft.Text(size=11, color=C["text_muted"])
 
-                def render_page():
+                def rebuild():
                     start = page[0] * PAGE_SZ
                     end = min(start + PAGE_SZ, total)
+                    pn = max(1, (total + PAGE_SZ - 1) // PAGE_SZ)
+                    header_row = ft.Row(
+                        [ft.Container(ft.Text(h, size=11, weight=ft.FontWeight.BOLD, color=C["text_muted"],
+                                text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
+                         for h in hd],
+                        spacing=2, alignment=ft.MainAxisAlignment.CENTER
+                    )
                     rows = [ft.Row(
                         [ft.Container(ft.Text(str(r.get(h, "")), size=12, color=tc, weight=ft.FontWeight.BOLD,
                                 text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
                          for h in hd],
                         spacing=2, alignment=ft.MainAxisAlignment.CENTER
                     ) for r in rs[start:end]]
-                    body.controls = [header_row] + rows
-                    pi.value = f"第{page[0]+1}页/共{max(1,(total+PAGE_SZ-1)//PAGE_SZ)}页  {start+1}-{end}条/共{total}条"
-                    btn_prev.disabled = page[0]==0
-                    btn_next.disabled = (page[0]+1)*PAGE_SZ >= total
+                    pagination = []
+                    if show_pagination:
+                        pagination = [ft.Row([
+                            ft.Text(f"第{page[0]+1}页/共{pn}页  {start+1}-{end}条/共{total}条", size=11, color=C["text_muted"]),
+                            ft.Container(expand=True),
+                            ft.IconButton(ft.Icons.NAVIGATE_BEFORE, icon_size=16, tooltip="上一页",
+                                on_click=lambda e: go(-1), disabled=(page[0] == 0)),
+                            ft.IconButton(ft.Icons.NAVIGATE_NEXT, icon_size=16, tooltip="下一页",
+                                on_click=lambda e: go(1), disabled=(end >= total)),
+                        ], spacing=4)]
+                    pager.controls = pagination + [ft.Column([header_row] + rows, spacing=4)]
+                    pager.update()
 
                 def go(delta):
                     page[0] += delta
-                    render_page()
-                    body.update(); pi.update(); btn_prev.update(); btn_next.update()
+                    rebuild()
 
-                btn_prev.on_click = lambda e: go(-1)
-                btn_next.on_click = lambda e: go(1)
-                render_page()
-                if show_pagination:
-                    return ft.Column([
-                        ft.Row([pi, ft.Container(expand=True), btn_prev, btn_next], spacing=4),
-                        body,
-                    ], spacing=2)
-                else:
-                    return ft.Column([header_row] + [ft.Row(
-                        [ft.Container(ft.Text(str(r.get(h, "")), size=12, color=tc, weight=ft.FontWeight.BOLD,
-                                text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
-                         for h in hd],
-                        spacing=2, alignment=ft.MainAxisAlignment.CENTER
-                    ) for r in rs], spacing=4)
+                rebuild()
+                return pager
             for k, icon, title, ec in [("summary",ft.Icons.TABLE_CHART,"STSCODE 汇总",False),
                                         ("gi_status",None,"GI 状态统计",False),
                                         ("errors",ft.Icons.ERROR,"GI 错误",True)]:
@@ -316,41 +302,43 @@ class App:
                 total = len(rs)
                 page = [0]
                 PAGE_SZ = 10
-                header_row = ft.Row(
-                    [ft.Container(ft.Text(h, size=11, weight=ft.FontWeight.BOLD, color=C["text_muted"],
-                            text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
-                     for h in hd],
-                    spacing=2, alignment=ft.MainAxisAlignment.CENTER
-                )
-                pi = ft.Text(f"第1页/共{max(1,(total+PAGE_SZ-1)//PAGE_SZ)}页  共{total}条", size=11, color=C["text_muted"])
-                btn_prev = ft.IconButton(ft.Icons.NAVIGATE_BEFORE, icon_size=16, tooltip="上一页", disabled=True)
-                btn_next = ft.IconButton(ft.Icons.NAVIGATE_NEXT, icon_size=16, tooltip="下一页",
-                    disabled=(PAGE_SZ >= total))
-                body = ft.Column([header_row], spacing=4)
-                def render_page():
+                pager = ft.Column(spacing=2)
+
+                def rebuild():
                     start = page[0] * PAGE_SZ
                     end = min(start + PAGE_SZ, total)
+                    pn = max(1, (total + PAGE_SZ - 1) // PAGE_SZ)
+                    header_row = ft.Row(
+                        [ft.Container(ft.Text(h, size=11, weight=ft.FontWeight.BOLD, color=C["text_muted"],
+                                text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
+                         for h in hd],
+                        spacing=2, alignment=ft.MainAxisAlignment.CENTER
+                    )
                     rows = [ft.Row(
                         [ft.Container(ft.Text(str(r.get(h, "")), size=12, color=C["text"], weight=ft.FontWeight.BOLD,
                                 text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
                          for h in hd],
                         spacing=2, alignment=ft.MainAxisAlignment.CENTER
                     ) for r in rs[start:end]]
-                    body.controls = [header_row] + rows
-                    pi.value = f"第{page[0]+1}页/共{max(1,(total+PAGE_SZ-1)//PAGE_SZ)}页  {start+1}-{end}条/共{total}条"
-                    btn_prev.disabled = page[0]==0
-                    btn_next.disabled = (page[0]+1)*PAGE_SZ >= total
+                    pager.controls = [
+                        ft.Row([
+                            ft.Text(f"第{page[0]+1}页/共{pn}页  {start+1}-{end}条/共{total}条", size=11, color=C["text_muted"]),
+                            ft.Container(expand=True),
+                            ft.IconButton(ft.Icons.NAVIGATE_BEFORE, icon_size=16, tooltip="上一页",
+                                on_click=lambda e: go(-1), disabled=(page[0] == 0)),
+                            ft.IconButton(ft.Icons.NAVIGATE_NEXT, icon_size=16, tooltip="下一页",
+                                on_click=lambda e: go(1), disabled=(end >= total)),
+                        ], spacing=4),
+                        ft.Column([header_row] + rows, spacing=4),
+                    ]
+                    pager.update()
+
                 def go(delta):
                     page[0] += delta
-                    render_page()
-                    body.update(); pi.update(); btn_prev.update(); btn_next.update()
-                btn_prev.on_click = lambda e: go(-1)
-                btn_next.on_click = lambda e: go(1)
-                render_page()
-                return self._card(None, title, ft.Column([
-                    ft.Row([pi, ft.Container(expand=True), btn_prev, btn_next], spacing=4),
-                    body,
-                ], spacing=2))
+                    rebuild()
+
+                rebuild()
+                return self._card(None, title, pager)
 
         def show(data):
             self._cache['export'] = data; rv.controls.clear(); rv.visible = True
