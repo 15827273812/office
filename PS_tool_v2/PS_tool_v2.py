@@ -2459,6 +2459,7 @@ def export_data():
             if len(num_conditions[0]) <= 4:
                 placeholders = ', '.join(['?'] * len(num_conditions))
                 SQL = SQL_DATA['export_data']['ap_shipping']
+                SQL = SQL.replace('{placeholders}', placeholders)
                 file_prefix = "AP_Shipping"
                 data = cur.execute(SQL, num_conditions).fetchall()
                 # 获取字段名
@@ -2488,6 +2489,7 @@ def export_data():
                     log_message(log_text_shipment,'文件已保存至桌面 !')
                 
                 SQL = SQL_DATA['export_data']['fw_shipping']
+                SQL = SQL.replace('{placeholders}', placeholders)
                 file_prefix = "FW_Shipping"
                 data = cur.execute(SQL, num_conditions).fetchall()  # 修正：使用SQL1
                 # 获取字段名
@@ -2517,6 +2519,7 @@ def export_data():
                     log_message(log_text_shipment,'文件已保存至桌面 !')
                 
                 SQL = SQL_DATA['export_data']['replenishment']
+                SQL = SQL.replace('{placeholders}', placeholders)
                 file_prefix = "Replenishment"
                 data = cur.execute(SQL, num_conditions).fetchall()
                 # 获取字段名
@@ -2615,22 +2618,26 @@ def export_data():
                 # 只有10位数字，执行第一段SQL
                 placeholders = ', '.join(['?'] * len(ten_digit_conditions))
                 SQL = SQL_DATA['export_data']['shipment_info']
+                SQL = SQL.replace('{placeholders}', placeholders)
                 num_conditions = ten_digit_conditions
                 file_prefix = "Shipment_info"
                 results = execute_sql_and_check_results(cur, SQL, num_conditions)
                 if results is None:
                     SQL = SQL_DATA['export_data']['plan_info_by_por']
+                    SQL = SQL.replace('{placeholders}', placeholders)
 
                     file_prefix = "plan_info"
                     results = execute_sql_and_check_results(cur, SQL, num_conditions)
                     if results is None:
                         SQL = SQL_DATA['export_data']['delay_info']
+                        SQL = SQL.replace('{placeholders}', placeholders)
                         file_prefix = "Delay_info"
 
             elif six_digit_conditions and not ten_digit_conditions:
                 # 只有6位数字，执行第二段SQL
                 placeholders = ', '.join(['?'] * len(six_digit_conditions))
                 SQL = SQL_DATA['export_data']['plan_info_by_ibrc']
+                SQL = SQL.replace('{placeholders}', placeholders)
                 num_conditions = six_digit_conditions
                 file_prefix = "plan_info"
             elif six_digit_conditions and ten_digit_conditions:
@@ -2638,19 +2645,23 @@ def export_data():
                 placeholders_6 = ', '.join(['?'] * len(six_digit_conditions))
                 placeholders_10 = ', '.join(['?'] * len(ten_digit_conditions))
                 SQL = SQL_DATA['export_data']['plan_info_by_both']
+                SQL = SQL.replace('{placeholders_10}', placeholders_10).replace('{placeholders_6}', placeholders_6)
                 num_conditions = ten_digit_conditions + six_digit_conditions
                 file_prefix = "plan_info"
             if len(num_conditions[0]) == 8:
                 placeholders = ', '.join(['?'] * len(num_conditions))
                 SQL = SQL_DATA['export_data']['packlist_info']
+                SQL = SQL.replace('{placeholders}', placeholders)
                 file_prefix = "Packlist_info"
             elif len(num_conditions[0]) == 20:
                 placeholders = ', '.join(['?'] * len(num_conditions))
                 SQL = SQL_DATA['export_data']['fs_info']
+                SQL = SQL.replace('{placeholders}', placeholders)
                 file_prefix = "FS_info"
                 results = execute_sql_and_check_results(cur, SQL, num_conditions)
                 if results is None and len(num_conditions[0]) == 20 and num_conditions[0][:11] == "00000000008":
                     SQL = SQL_DATA['export_data']['trailer_info']
+                    SQL = SQL.replace('{placeholders}', placeholders)
                     file_prefix = "trailer_info" 
             if not SQL and len(num_conditions[0]) != 4:
                 log_message(log_text_shipment,'没有输入有效的查询条件。')
@@ -2692,12 +2703,15 @@ def export_data():
         if alpha_conditions:
             if len(alpha_conditions[0]) == 10:
                     SQL = SQL_DATA['export_data']['data_by_sku']
+                    SQL = SQL.replace('{placeholders}', placeholders)
                     file_prefix = "data"
             elif  len(alpha_conditions[0]) == 9:
                     SQL = SQL_DATA['export_data']['trailer_info_by_csn']
+                    SQL = SQL.replace('{placeholders}', placeholders)
                     file_prefix = "trailer_info"
             elif len(alpha_conditions[0]) != 10:
                     SQL = SQL_DATA['export_data']['inventory_by_sku']
+                    SQL = SQL.replace('{placeholders}', placeholders)
                     file_prefix = "Inventory"
         # 检查SQL是否被正确赋值
         if SQL is None:
