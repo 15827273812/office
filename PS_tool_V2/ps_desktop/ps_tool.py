@@ -111,6 +111,49 @@ class App:
             padding=16, bgcolor=C["bg_card"], border_radius=8, margin=ft.margin.only(bottom=8),
         )
 
+    def _stat_card(self, container, fields, rows, title, total):
+        col_count = len(fields)
+        col_width = max(120, 600 // col_count)
+        PAGE_SZ = 10
+        total_rows = len(rows)
+        pn = max(1, (total_rows + PAGE_SZ - 1) // PAGE_SZ)
+        page = [0]; start = 0; end = min(PAGE_SZ, total_rows)
+        header_row = ft.Row(
+            [ft.Container(ft.Text(h, size=11, weight=ft.FontWeight.BOLD, color=C["text_muted"],
+                    text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
+             for h in fields],
+            spacing=2, alignment=ft.MainAxisAlignment.CENTER
+        )
+        def make_rows(s, e):
+            return [ft.Row(
+                [ft.Container(ft.Text(str(r.get(h, "")), size=12, color=C["text"], weight=ft.FontWeight.BOLD,
+                        text_align=ft.TextAlign.CENTER), width=col_width, padding=5)
+                 for h in fields],
+                spacing=2, alignment=ft.MainAxisAlignment.CENTER
+            ) for r in rows[s:e]]
+        body = ft.Column([header_row] + make_rows(0, end), spacing=4)
+        pi = ft.Text(f"第1页/共{pn}页  {start+1}-{end}条/共{total_rows}条", size=11, color=C["text_muted"])
+        btn_prev = ft.IconButton(ft.Icons.NAVIGATE_BEFORE, icon_size=16, tooltip="上一页",
+            on_click=lambda e: go(-1), disabled=True)
+        btn_next = ft.IconButton(ft.Icons.NAVIGATE_NEXT, icon_size=16, tooltip="下一页",
+            on_click=lambda e: go(1), disabled=(end>=total_rows))
+        def go(delta):
+            page[0] += delta
+            s = page[0] * PAGE_SZ; e = min(s + PAGE_SZ, total_rows)
+            body.controls = [header_row] + make_rows(s, e)
+            pi.value = f"第{page[0]+1}页/共{pn}页  {s+1}-{e}条/共{total_rows}条"
+            btn_prev.disabled = (page[0] == 0); btn_next.disabled = (e >= total_rows)
+            pi.update(); btn_prev.update(); btn_next.update(); body.update()
+        card = ft.Container(
+            ft.Column([
+                ft.Row([ft.Container(expand=True), ft.Text(title, size=14, weight=ft.FontWeight.BOLD, color=C["text"])]),
+                ft.Row([pi, ft.Container(expand=True), btn_prev, btn_next], spacing=4),
+                body,
+            ], spacing=6),
+            bgcolor=C["bg_card"], border=ft.border.all(1, C["border"]),
+            border_radius=10, padding=12, margin=ft.margin.only(bottom=6))
+        container.controls.append(card)
+
     PAGE_SIZE = 10
 
     def _tbl_widget(self, fields, rows, h=300):
@@ -443,16 +486,25 @@ class App:
         dd = ft.Dropdown(label="查询类型", options=[ft.dropdown.Option(t) for t in types],
                          value=types[0], border_color=C["border"], color=C["text"], width=350)
         sp = ft.DatePicker(); ep = ft.DatePicker()
-        sf = ft.TextField(label="开始日期", hint_text="点击选择", read_only=True,
-                          border_color=C["border"], color=C["text"], width=200)
-        ef = ft.TextField(label="结束日期", hint_text="点击选择", read_only=True,
-                          border_color=C["border"], color=C["text"], width=200)
+        sf = ft.TextField(label="开始日期", hint_text="格式: YYYY-MM-DD",
+            border_color=C["border"], color=C["text"], width=200,
+            on_change=lambda e: None)
+        ef = ft.TextField(label="结束日期", hint_text="格式: YYYY-MM-DD",
+            border_color=C["border"], color=C["text"], width=200,
+            on_change=lambda e: None)
         rv = ft.Column(spacing=4, visible=False, scroll=ft.ScrollMode.AUTO)
 
-        def ps(e): self.page.open(sp)
-        def pe(e): self.page.open(ep)
-        sp.on_change = lambda e: (setattr(sf,"value",sp.value.strftime("%Y-%m-%d")) or self.page.update()) if sp.value else None
-        ep.on_change = lambda e: (setattr(ef,"value",ep.value.strftime("%Y-%m-%d")) or self.page.update()) if ep.value else None
+        def ps(e):
+            self.page.open(sp)
+            # After picker closes, fill in text field
+            if sp.value:
+                sf.value = sp.value.strftime("%Y-%m-%d")
+                self.page.update()
+        def pe(e):
+            self.page.open(ep)
+            if ep.value:
+                ef.value = ep.value.strftime("%Y-%m-%d")
+                self.page.update()
 
         _req_id = [0]
         def show(data, req_id):
@@ -468,15 +520,35 @@ class App:
         def q(e):
             rv.visible=False; rv.controls.clear()
             _req_id[0] += 1; rid = _req_id[0]
-            self._run(lambda: query_date_range(self.db, dd.value, sp.value, ep.value), lambda d: show(d, rid))
+            # 解析文本字段，支持直接输入或日期选择器
+            s_val = sf.value.strip() if sf.value else ""
+            e_val = ef.value.strip() if ef.value else ""
+            import datetime
+            s_date = None; e_date = None
+            if s_val:
+                try: s_date = datetime.datetime.strptime(s_val, "%Y-%m-%d")
+                except: pass
+            if e_val:
+                try: e_date = datetime.datetime.strptime(e_val, "%Y-%m-%d")
+                except: pass
+            s = s_date if s_date else sp.value
+            e = e_date if e_date else ep.value
+            if not s:
+                # 默认今天
+                s = datetime.datetime.now()
+            if not e:
+                e = s
+            self._run(lambda: query_date_range(self.db, dd.value, s, e), lambda d: show(d, rid))
 
         return ft.Column([ft.Container(ft.Column([
             ft.Text("按日期查询",size=20,weight=ft.FontWeight.BOLD,color=C["text"]),
             ft.Divider(color=C["border"]), dd,
             ft.Row([
-                ft.Row([sf,ft.IconButton(ft.Icons.CALENDAR_MONTH,on_click=ps,icon_color=C["accent"])]),
+                ft.Row([sf,ft.IconButton(ft.Icons.CALENDAR_MONTH,icon_size=20,
+                    on_click=ps,icon_color=C["accent"],tooltip="点击选择日期")]),
                 ft.Text("至",color=C["text_muted"]),
-                ft.Row([ef,ft.IconButton(ft.Icons.CALENDAR_MONTH,on_click=pe,icon_color=C["accent"])]),
+                ft.Row([ef,ft.IconButton(ft.Icons.CALENDAR_MONTH,icon_size=20,
+                    on_click=pe,icon_color=C["accent"],tooltip="点击选择日期")]),
             ], spacing=8, wrap=True),
             ft.Row([
                 ft.FilledButton("查询",icon=ft.Icons.SEARCH,on_click=q,style=ft.ButtonStyle(bgcolor=C["accent"])),
