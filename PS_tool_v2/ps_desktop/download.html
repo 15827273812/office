@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>PS Tool 下载</title>
+<style>
+body { font-family: sans-serif; background: #1a1a2e; color: #e0e0e0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+.card { background: #1e293b; border-radius: 12px; padding: 40px; max-width: 500px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+h1 { color: #64b5f6; margin-top: 0; }
+.file { background: #16213e; border-radius: 8px; padding: 15px 20px; margin: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+.file-name { font-weight: bold; color: #e0e0e0; }
+.file-size { color: #90a4ae; font-size: 0.85em; }
+a { background: #1565c0; color: white; text-decoration: none; padding: 6px 16px; border-radius: 6px; font-size: 0.9em; }
+a:hover { background: #1976d2; }
+.note { color: #90a4ae; font-size: 0.85em; margin-top: 20px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="card">
+<h1>📦 PS Tool 客户端文件</h1>
+<p style="color:#90a4ae;">下载后放到同一目录即可运行</p>
+
+<div class="file">
+<div><div class="file-name">PS_tool.py</div><div class="file-size">67 KB</div></div>
+<a href="https://raw.githubusercontent.com/15827273812/office/main/PS_tool_v2/ps_desktop/PS_tool.py" download>下载</a>
+</div>
+
+<div class="file">
+<div><div class="file-name">core.py</div><div class="file-size">15 KB</div></div>
+<a href="https://raw.githubusercontent.com/15827273812/office/main/PS_tool_v2/ps_desktop/core.py" download>下载</a>
+</div>
+
+<div class="file">
+<div><div class="file-name">config.json</div><div class="file-size">45 KB</div></div>
+<a href="https://raw.githubusercontent.com/15827273812/office/main/PS_tool_v2/ps_desktop/config.json" download>下载</a>
+</div>
+
+<p class="note">
+运行方式：<code>pip install flet pandas pyodbc</code> 后执行 <code>python PS_tool.py</code>
+<br><br>
+最新已打包的 exe 可在 <a href="https://github.com/15827273812/office/releases/latest" style="color:#64b5f6;padding:0;background:transparent;">GitHub Release</a> 下载
+</p>
+</div>
+</body>
+</html>
