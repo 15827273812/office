@@ -118,13 +118,10 @@ class App:
         extra = f"前100条/共{len(rows)}条" if len(rows) > 100 else f"共{len(rows)}条"
         return ft.Column([
             ft.Text(extra, size=11, color=C["text_muted"]),
-            ft.Container(
-                ft.DataTable(columns=cols, rows=dr, bgcolor=C["bg_card"],
-                    border=ft.border.all(1,C["border"]), heading_row_color=C["bg_dark"],
-                    heading_row_height=28, data_row_max_height=22),
-                height=h, expand=True,
-            ),
-        ], spacing=2, expand=True, scroll=ft.ScrollMode.AUTO)
+            ft.Container(ft.DataTable(columns=cols, rows=dr, bgcolor=C["bg_card"],
+                border=ft.border.all(1,C["border"]), heading_row_color=C["bg_dark"],
+                heading_row_height=28, data_row_max_height=22), height=h, expand=True),
+        ], spacing=2)
 
     def _save(self, key):
         data = self._cache.get(key)
@@ -214,7 +211,7 @@ class App:
             ft.Row([ft.Text("GI 状态监控",size=20,weight=ft.FontWeight.BOLD,color=C["text"]),
                     ft.Container(expand=True),refresh_btn]),
             ft.Divider(color=C["border"]),
-            ft.Container(rv, expand=True, scroll=ft.ScrollMode.AUTO),
+            rv,
         ], spacing=12), padding=24, expand=True)], scroll=ft.ScrollMode.AUTO)
     # ==================== 数据导出 Tab ====================
     def _export(self):
