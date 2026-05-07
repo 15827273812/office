@@ -41,12 +41,12 @@ class App:
             selected_index=0, label_type=ft.NavigationRailLabelType.ALL,
             min_width=100, extended=True, bgcolor=C["bg_dark"], indicator_color=C["accent"],
             destinations=[
+                ft.NavigationRailDestination(icon=ft.Icons.TERMINAL, selected_icon=ft.Icons.TERMINAL, label="工作台"),
                 ft.NavigationRailDestination(icon=ft.Icons.CHECK_CIRCLE_OUTLINE, selected_icon=ft.Icons.CHECK_CIRCLE, label="GI 状态"),
                 ft.NavigationRailDestination(icon=ft.Icons.FILE_DOWNLOAD_OUTLINED, selected_icon=ft.Icons.FILE_DOWNLOAD, label="数据导出"),
                 ft.NavigationRailDestination(icon=ft.Icons.LABEL_OUTLINE, selected_icon=ft.Icons.LABEL, label="标签历史"),
                 ft.NavigationRailDestination(icon=ft.Icons.DATE_RANGE_OUTLINED, selected_icon=ft.Icons.DATE_RANGE, label="日期查询"),
                 ft.NavigationRailDestination(icon=ft.Icons.BUG_REPORT_OUTLINED, selected_icon=ft.Icons.BUG_REPORT, label="Incident"),
-                ft.NavigationRailDestination(icon=ft.Icons.TERMINAL, selected_icon=ft.Icons.TERMINAL, label="工作台"),
             ],
             on_change=self._switch,
         )
