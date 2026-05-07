@@ -1268,7 +1268,7 @@ class App:
                           easygui.msgbox("截图结束！请检查结果！！！")
 
                     should_copy_text = True
-                    current_date = dt.now().strftime("%m%d")
+                    current_date = datetime.now().strftime("%m%d")
                     word_doc_path = f"{current_date}.docx"
                     doc = docx.Document()
 
